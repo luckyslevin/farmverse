@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "270237767045",
+    "project_id": "farmverse-1298e",
+    "storage_bucket": "farmverse-1298e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:270237767045:android:70263ca2873721cafa60ec",
+        "android_client_info": {
+          "package_name": "com.app.farmverse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDItdwBQWwk7c1b5ZRNYpxh6FPfYUyxEA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

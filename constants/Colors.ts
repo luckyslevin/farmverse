@@ -5,8 +5,8 @@
 
 export const Colors = {
   "light": {
-    "primary": "rgb(0, 109, 64)",
-    "onPrimary": "rgb(255, 255, 255)",
+    "primary": "#1E412C",
+    "onPrimary": "#E0ECCC",
     "primaryContainer": "rgb(149, 247, 185)",
     "onPrimaryContainer": "rgb(0, 33, 16)",
     "secondary": "rgb(67, 105, 21)",
@@ -21,12 +21,12 @@ export const Colors = {
     "onError": "rgb(255, 255, 255)",
     "errorContainer": "rgb(255, 218, 214)",
     "onErrorContainer": "rgb(65, 0, 2)",
-    "background": "rgb(251, 253, 248)",
-    "onBackground": "rgb(25, 28, 26)",
-    "surface": "rgb(251, 253, 248)",
-    "onSurface": "rgb(25, 28, 26)",
-    "surfaceVariant": "rgb(220, 229, 219)",
-    "onSurfaceVariant": "rgb(65, 73, 66)",
+    "background": "#E0ECCC",
+    "onBackground": "#1E412C",
+    "surface": "#E0ECCC",
+    "onSurface": "#1E412C",
+    "surfaceVariant": "#E0ECCC",
+    "onSurfaceVariant": "#1E412C",
     "outline": "rgb(113, 121, 113)",
     "outlineVariant": "rgb(192, 201, 192)",
     "shadow": "rgb(0, 0, 0)",
@@ -44,6 +44,6 @@ export const Colors = {
     },
     "surfaceDisabled": "rgba(25, 28, 26, 0.12)",
     "onSurfaceDisabled": "rgba(25, 28, 26, 0.38)",
-    "backdrop": "rgba(42, 50, 44, 0.4)"
+    "backdrop": "rgba(42, 50, 44, 0.4)",
   }
 }
