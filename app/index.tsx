@@ -1,50 +1,25 @@
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import * as React from "react";
-import { KeyboardAvoidingView, View, StyleSheet } from "react-native";
-import { Button, TextInput, useTheme, Text } from "react-native-paper";
+import { View, StyleSheet } from "react-native";
+import { Button, Text } from "react-native-paper";
 
 export default function Page() {
-  const theme = useTheme();
-
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.onPrimary }]}
-    > 
-      <View style={{ display: "flex", alignItems: "center", marginBottom: 50 }}>
-      <Text variant="headlineLarge">User Login </Text>
-      <Text style={{marginTop: 80 }}>Login to your account </Text>
+    <View style={styles.container}>
+      <View style={{ alignItems: "center" }}>
+        <Text style={{ marginBottom: 40, paddingHorizontal: 10 }} variant="headlineLarge">
+          Welcome to Farmverse
+        </Text>
+        <Text style={{ marginBottom: 10,}}>What type of user are you ?</Text>      
       </View>
-      <KeyboardAvoidingView behavior="padding" style={{ marginHorizontal: 20 }}>
-        <TextInput
-          style={styles.input}
-          mode="outlined"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          label="Email"
-        />
-        <TextInput
-          style={styles.input}
-          mode="outlined"
-          secureTextEntry
-          label="Password"
-        />
-        
-          <Button style={styles.button} mode="contained">
-            Login{" "}
-          </Button>
-          <View style={{ display: "flex", alignItems: "center", marginTop: 40 }}>
-            <Text>Forgot your Password? </Text>
-            <Text>
-              Don't have an account yet ?{" "}
-              <Link
-                href="/"
-                style={{ fontWeight: "bold", textDecorationLine: "underline" }}
-              >
-                Sign Up
-              </Link>
-          </Text>
+      <View style={{  marginHorizontal: 10 }}>
+        <Button style={{ marginBottom: 10 }} mode="contained" onPress={() => router.push("/login")}>
+          Buyer
+        </Button>
+        <Button style={{ marginBottom: 50 }} mode="contained" onPress={() => router.push("/login")}>
+          Farmer
+        </Button>
         </View>
-      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -53,11 +28,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-  },
-  input: {
-    marginVertical: 4,
-  },
-  button: {
-    marginTop: 40,
   },
 });
