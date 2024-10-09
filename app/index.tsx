@@ -1,9 +1,9 @@
-import { Link, router } from "expo-router";
-import * as React from "react";
-import { View, StyleSheet } from "react-native";
+import { router } from "expo-router";
+import { View } from "react-native";
 import { Button, Text } from "react-native-paper";
 
 export default function Page() {
+  
   return (
     <View style={{ flex: 1, justifyContent: "center" }}>
       <View style={{ alignItems: "center" }}>

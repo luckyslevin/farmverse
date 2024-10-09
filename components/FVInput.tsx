@@ -1,6 +1,7 @@
 import React, { FC } from "react";
 import { HelperText, TextInput, TextInputProps } from "react-native-paper";
 import { Control, Controller, FieldErrors, FieldValues } from "react-hook-form";
+
 interface FormInputControllerProps {
   control: Control<FieldValues>;
   errors?: FieldErrors<FieldValues>;
@@ -28,9 +29,9 @@ const FVInput: FC<FormInputControllerProps> = ({
           />
         )}
       />
-
+      
       {errors && errors[name] && (
-        <HelperText type="error">{String(errors[name]?.message)}</HelperText>
+        <HelperText type="error">{errors[name]?.message as string}</HelperText>
       )}
     </>
   );
