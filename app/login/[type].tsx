@@ -1,23 +1,26 @@
 import FVInput from "@/components/FVInput";
 import { Link, useLocalSearchParams } from "expo-router";
-import * as React from "react";
+import { useRef } from "react";
+
 import { useForm } from "react-hook-form";
 import { KeyboardAvoidingView, View, StyleSheet } from "react-native";
-import { Button, TextInput, Text } from "react-native-paper";
+import { Button, Text } from "react-native-paper";
 import {zodResolver} from "@hookform/resolvers/zod";
 import z from "zod"
 
 const schema = z.object({
   email: z.string().email(),
-  password: z.string(),
+  password: z.string().min(1, { message: "Required" }),
 })
+
 export default function Page() {
   const { type } = useLocalSearchParams<{ type: string }>();
   const { control, handleSubmit, formState: { errors, isDirty, isValid },  } = useForm({ resolver: zodResolver(schema), mode: "onChange" });
-
   const onSubmit = (data: any) => {
     alert(JSON.stringify(data, null, 2))
   }
+  const passwordRef = useRef<any>(null);
+
   return (
     <View
       style={{
@@ -38,7 +41,10 @@ export default function Page() {
             mode: "outlined",
             autoCapitalize: "none",
             keyboardType: "email-address",
-            label: "Email"
+            label: "Email",
+            onSubmitEditing: () => passwordRef?.current?.focus(),
+            returnKeyType: "next",
+            blurOnSubmit: false
           }}
           errors={errors}
         />
@@ -46,11 +52,13 @@ export default function Page() {
           control={control}
           name="password"
           props={{
+            ref: passwordRef,
             style: styles.input,
             mode: "outlined",
             autoCapitalize: "none",
             label: "Password",
             secureTextEntry: true,
+            
           }}
           errors={errors}
         />
@@ -60,12 +68,12 @@ export default function Page() {
         <View style={{ alignItems: "center", marginTop: 40 }}>
           <Text>Forgot your Password ? </Text>
           <Text>
-            Don't have an account yet ?
+            Don't have an account yet ? {" "}
             <Link
               href={{ pathname: "/register/[type]", params: { type } }}
               style={{ fontWeight: "bold", textDecorationLine: "underline" }}
             >
-              Sign Up
+            Sign Up
             </Link>
           </Text>
         </View>
@@ -76,7 +84,7 @@ export default function Page() {
 
 const styles = StyleSheet.create({
   input: {
-    marginVertical: 4,
+    marginVertical: 4
   },
   button: {
     marginTop: 40,

@@ -12,7 +12,7 @@ const FVInput: FC<FormInputControllerProps> = ({
   control,
   errors,
   name,
-  ...props
+  props,
 }) => {
   return (
     <>
@@ -24,12 +24,14 @@ const FVInput: FC<FormInputControllerProps> = ({
             value={value}
             onChangeText={onChange}
             onBlur={onBlur}
-            {...props.props}
+            {...props}
           />
         )}
       />
 
-    {errors && errors[name] && <HelperText type="error">{String(errors[name]?.message)}</HelperText>}
+      {errors && errors[name] && (
+        <HelperText type="error">{String(errors[name]?.message)}</HelperText>
+      )}
     </>
   );
 };
