@@ -23,10 +23,10 @@ export default function RootLayout() {
     <PaperProvider theme={{...customLightTheme, roundness: 27.5 }}>
       <Stack screenOptions={{ contentStyle: { backgroundColor: customLightTheme.colors.background }}}>
         <Stack.Screen name="index" options={{ headerShown: false }}/>
-        <Stack.Screen name="login" options={{ 
+        <Stack.Screen name="login/[type]" options={{ 
           headerTitle: '',
           headerStyle: { backgroundColor: customLightTheme.colors.background }}}/>
-        <Stack.Screen name="signup" options={{ 
+        <Stack.Screen name="register/[type]" options={{ 
           headerTitle: '',
           headerStyle: { backgroundColor: customLightTheme.colors.background }}}/>
       </Stack>
