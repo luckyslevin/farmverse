@@ -1,4 +1,4 @@
-package com.app.farmverse
+package com.dev.farmverse
 
 import android.os.Build
 import android.os.Bundle

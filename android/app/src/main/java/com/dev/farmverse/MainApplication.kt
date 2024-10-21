@@ -1,4 +1,4 @@
-package com.app.farmverse
+package com.dev.farmverse
 
 import android.app.Application
 import android.content.res.Configuration

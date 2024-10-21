@@ -14,10 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.app.farmverse"
+      "bundleIdentifier": "com.dev.farmverse"
     },
     "android": {
-      "package": "com.app.farmverse",
+      "package": "com.dev.farmverse",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
