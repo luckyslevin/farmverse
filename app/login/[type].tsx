@@ -14,7 +14,7 @@ const schema = z.object({
 });
 
 export default function Page() {
-  const { type } = useLocalSearchParams<{ type: string }>();
+  const { type } = useLocalSearchParams<{ type: "User" | "Farmer" }>();
   const {
     control,
     handleSubmit,

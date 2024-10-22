@@ -12,12 +12,12 @@ const Page = () => {
     handleSubmit,
     formState: { errors, isDirty, isValid },
   } = useForm({ resolver: zodResolver(schema), mode: "onChange" });
-  const { type } = useLocalSearchParams<{ type: string }>();
+  const { type } = useLocalSearchParams<{ type: "User" | "Farmer" }>();
 
   const { createAccountMutation } = useAccount();
 
   const handleSignup: SubmitHandler<FieldValues> = (data: FieldValues) => {
-    createAccountMutation.mutate(data as Account);
+    createAccountMutation.mutate({ ...(data as Account),  type});
   };
 
   return (
