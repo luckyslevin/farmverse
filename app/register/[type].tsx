@@ -1,97 +1,114 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Alert } from 'react-native';
-import { TextInput, Button, Text } from 'react-native-paper';
+import FVInput from "@/components/FVInput";
+import { Account, schema, useAccount } from "@/hooks/useAccount";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocalSearchParams } from "expo-router";
+import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
+import { KeyboardAvoidingView, ScrollView, StyleSheet } from "react-native";
+import { Button, Text } from "react-native-paper";
 
 const Page = () => {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isDirty, isValid },
+  } = useForm({ resolver: zodResolver(schema), mode: "onChange" });
+  const { type } = useLocalSearchParams<{ type: string }>();
 
-  // State variables for the form fields
-  const [email, setEmail] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
+  const { createAccountMutation } = useAccount();
 
-  // Function to handle form submission
-  const handleSignup = () => {
-    if (!email || !firstName || !lastName || !phone || !password) {
-      Alert.alert('Error', 'Please fill out all fields.');
-      return;
-    }
-    // Here you can add your signup logic, e.g., making a request to a backend API
-    Alert.alert('Success', `Welcome, ${firstName}!`);
+  const handleSignup: SubmitHandler<FieldValues> = (data: FieldValues) => {
+    createAccountMutation.mutate(data as Account);
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Sign Up</Text>
 
-      <TextInput
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        style={styles.input}
-        mode="outlined"
+      <KeyboardAvoidingView behavior="padding">
+
+      <FVInput
+        control={control}
+        name="email"
+        errors={errors}
+        props={{
+          label: "Email",
+          keyboardType: "email-address",
+          autoCapitalize: "none",
+          style: styles.input,
+          mode: "outlined",
+        }}
       />
 
-      <TextInput
-        label="First Name"
-        value={firstName}
-        onChangeText={setFirstName}
-        style={styles.input}
-        mode="outlined"
+      <FVInput
+        control={control}
+        name="firstName"
+        errors={errors}
+        props={{
+          label: "First Name",
+          style: styles.input,
+          mode: "outlined",
+        }}
       />
 
-      <TextInput
-        label="Last Name"
-        value={lastName}
-        onChangeText={setLastName}
-        style={styles.input}
-        mode="outlined"
+      <FVInput
+        control={control}
+        name="lastName"
+        errors={errors}
+        props={{
+          label: "Last Name",
+          style: styles.input,
+          mode: "outlined",
+        }}
       />
 
-      <TextInput
-        label="Phone Number"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-        style={styles.input}
-        mode="outlined"
+      <FVInput
+        control={control}
+        name="phoneNo"
+        errors={errors}
+        props={{
+          label: "Phone Number",
+          keyboardType: "phone-pad",
+          style: styles.input,
+          mode: "outlined",
+        }}
       />
 
-      <TextInput
-        label="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={styles.input}
-        mode="outlined"
+      <FVInput
+        control={control}
+        name="password"
+        errors={errors}
+        props={{
+          label: "Password",
+          secureTextEntry: true,
+          style: styles.input,
+          mode: "outlined",
+        }}
       />
 
-      <Button 
-        mode="contained" 
-        onPress={handleSignup}
+      <Button
+        mode="contained"
+        disabled={!isDirty || !isValid}
+        onPress={handleSubmit(handleSignup)}
         style={styles.button}
         contentStyle={styles.buttonContent}
-        >
+      >
         Sign Up
       </Button>
+      </KeyboardAvoidingView>
     </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: 20,
-    backgroundColor: '#f9f9f9',
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 20,
   },
   input: {
@@ -105,4 +122,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Page
+export default Page;

@@ -1,25 +1,32 @@
-import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 import { useMutation, UseMutationResult } from '@tanstack/react-query';
+import { z } from 'zod';
 
-
+export let schema = z.object({
+  email: z.string().email(),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  phoneNo: z.string().refine((value) => /^(?:[0-9-()/.]\s?){6,15}[0-9]{1}$/.test(value)),
+  password: z.string().min(1),
+})
+export type Account = z.infer<typeof schema>
 export function useAccount(): {
-  createAccountMutation: UseMutationResult<FirebaseFirestoreTypes.DocumentReference<FirebaseFirestoreTypes.DocumentData>, Error, {
-    email: string;
-    firstName: string;
-    lastName: string;
-    phoneNo: string;
-  }, unknown>
+  createAccountMutation: UseMutationResult<void, Error, Account, unknown>
 } {
 
   const createAccountMutation = useMutation({
-    mutationFn: ({ email, firstName, lastName, phoneNo }: { email: string, firstName: string, lastName: string, phoneNo: string }) => {
-      return firestore().collection('users').add({
-        email,
-        firstName,
-        lastName,
-        phoneNo,
+    mutationFn: async (account: Account) =>{
+      const { user } = await auth().createUserWithEmailAndPassword(account.email, account.password)
+      
+      return firestore().collection('users')
+      .doc(user.uid)
+      .set({
+        id: user.uid,
+        ...account,
       })
     }
   });
+
   return { createAccountMutation }
 }

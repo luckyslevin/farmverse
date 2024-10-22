@@ -1,10 +1,10 @@
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export function useGlobalState<T>(
   queryKey: unknown,
   initialData: T | null = null,
 ) {
+
   const queryClient = useQueryClient();
 
   const { data } = useQuery({
