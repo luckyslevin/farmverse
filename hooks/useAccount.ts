@@ -9,7 +9,7 @@ export let schema = z.object({
   lastName: z.string().min(1),
   phoneNo: z.string().refine((value) => /^(?:[0-9-()/.]\s?){6,15}[0-9]{1}$/.test(value)),
   password: z.string().min(1),
-  type: z.enum(["User", "Farmer"]),
+  type: z.enum(["User", "Farmer"]).optional(),
 })
 export type Account = z.infer<typeof schema>
 export function useAccount(): {
