@@ -1,6 +1,8 @@
 import { Colors } from "@/constants/Colors";
+import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
+import { useEffect } from "react";
 import { PaperProvider } from "react-native-paper";
 import Toast from 'react-native-toast-message';
 
@@ -10,6 +12,14 @@ const customLightTheme = { colors: Colors.light };
 export default function RootLayout() {
   
   const queryClient = new QueryClient();
+  const onAuthStateChanged = (user: FirebaseAuthTypes.User | null) => {
+		console.log('onAuthStateChanged', user);
+		
+	};
+  useEffect(() => {
+		const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
+		return subscriber;
+	}, []);
 
   return (
     <QueryClientProvider client={queryClient}>

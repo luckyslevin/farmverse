@@ -2,7 +2,7 @@ import FVInput from "@/components/FVInput";
 import { Link, useLocalSearchParams } from "expo-router";
 import { useRef } from "react";
 
-import {  FieldValues, useForm } from "react-hook-form";
+import { FieldValues, useForm } from "react-hook-form";
 import { KeyboardAvoidingView, View, StyleSheet } from "react-native";
 import { Button, Text } from "react-native-paper";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,22 +25,25 @@ export default function Page() {
 
   const { loginMutation } = useAccount();
   const onSubmit = (data: FieldValues) => {
-    loginMutation.mutate(data as { email: string; password: string }, {
-      onSuccess: () => {
-        Toast.show({
-          type: "success",
-          text1: "Login Successful",
-          text2: "Login account successfully",
-        })
-      },
-      onError: () => {
-        Toast.show({
-          type: "error",
-          text1: "Login Failure",
-          text2: "Login account failed",
-        })
+    loginMutation.mutate(
+      { ...data, type } as { email: string; password: string; type: string },
+      {
+        onSuccess: (user) => {
+          Toast.show({
+            type: "success",
+            text1: "Login Successful",
+            text2: "Login account successfully",
+          });
+        },
+        onError: (err) => {
+          Toast.show({
+            type: "error",
+            text1: "Login Failure",
+            text2: "Login account failed",
+          });
+        },
       }
-    })
+    );
   };
   const passwordRef = useRef<any>(null);
 

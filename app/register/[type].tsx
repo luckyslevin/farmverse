@@ -1,7 +1,7 @@
 import FVInput from "@/components/FVInput";
 import { Account, schema, useAccount } from "@/hooks/useAccount";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocalSearchParams } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { KeyboardAvoidingView, ScrollView, StyleSheet } from "react-native";
 import { Button, Text } from "react-native-paper";
@@ -18,22 +18,25 @@ const Page = () => {
   const { createAccountMutation } = useAccount();
 
   const onSubmit: SubmitHandler<FieldValues> = (data: FieldValues) => {
-    createAccountMutation.mutate({ ...(data as Account), type }, {
-      onSuccess: () => {
-        Toast.show({
-          type: "success",
-          text1: "Register Successful",
-          text2: "Register account successfully",
-        })
-      },
-      onError: () => {
-        Toast.show({
-          type: "error",
-          text1: "Register Failure",
-          text2: "Register account failed",
-        })
+    createAccountMutation.mutate(
+      { ...(data as Account), type },
+      {
+        onSuccess: () => {
+          Toast.show({
+            type: "success",
+            text1: "Register Successful",
+            text2: "Register account successfully",
+          });
+        },
+        onError: (err) => {
+          Toast.show({
+            type: "error",
+            text1: "Register Failure",
+            text2: "Register account failed",
+          });
+        },
       }
-    });
+    );
   };
 
   return (
@@ -111,11 +114,12 @@ const Page = () => {
         </Button>
         <Text style={styles.signinText}>
           Have an account?{" "}
-          <Text
+          <Link
+            href={{ pathname: "/login/[type]", params: { type } }}
             style={styles.signinLink}
           >
             Sign in
-          </Text>
+          </Link>
         </Text>
       </KeyboardAvoidingView>
     </ScrollView>
