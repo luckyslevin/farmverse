@@ -2,11 +2,13 @@ import FVInput from "@/components/FVInput";
 import { Link, useLocalSearchParams } from "expo-router";
 import { useRef } from "react";
 
-import { useForm } from "react-hook-form";
+import {  FieldValues, useForm } from "react-hook-form";
 import { KeyboardAvoidingView, View, StyleSheet } from "react-native";
 import { Button, Text } from "react-native-paper";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
+import { useAccount } from "@/hooks/useAccount";
+import Toast from "react-native-toast-message";
 
 const schema = z.object({
   email: z.string().email(),
@@ -20,8 +22,25 @@ export default function Page() {
     handleSubmit,
     formState: { errors, isDirty, isValid },
   } = useForm({ resolver: zodResolver(schema), mode: "onChange" });
-  const onSubmit = (data: any) => {
-    alert(JSON.stringify(data, null, 2));
+
+  const { loginMutation } = useAccount();
+  const onSubmit = (data: FieldValues) => {
+    loginMutation.mutate(data as { email: string; password: string }, {
+      onSuccess: () => {
+        Toast.show({
+          type: "success",
+          text1: "Login Successful",
+          text2: "Login account successfully",
+        })
+      },
+      onError: () => {
+        Toast.show({
+          type: "error",
+          text1: "Login Failure",
+          text2: "Login account failed",
+        })
+      }
+    })
   };
   const passwordRef = useRef<any>(null);
 
@@ -33,8 +52,16 @@ export default function Page() {
       }}
     >
       <View style={{ alignItems: "center", marginBottom: 50 }}>
-        <Text variant="headlineLarge">{type} Login </Text>
-        <Text style={{ marginTop: 80 }}>Login to your account </Text>
+        <Text
+          style={{
+            fontSize: 24,
+            fontWeight: "bold",
+            textAlign: "center",
+          }}
+        >
+          {type} Login{" "}
+        </Text>
+        <Text style={{ marginTop: 50 }}>Login to your account </Text>
       </View>
       <KeyboardAvoidingView behavior="padding" style={{ marginHorizontal: 20 }}>
         <FVInput

@@ -5,6 +5,7 @@ import { useLocalSearchParams } from "expo-router";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import { KeyboardAvoidingView, ScrollView, StyleSheet } from "react-native";
 import { Button, Text } from "react-native-paper";
+import Toast from "react-native-toast-message";
 
 const Page = () => {
   const {
@@ -16,84 +17,106 @@ const Page = () => {
 
   const { createAccountMutation } = useAccount();
 
-  const handleSignup: SubmitHandler<FieldValues> = (data: FieldValues) => {
-    createAccountMutation.mutate({ ...(data as Account),  type});
+  const onSubmit: SubmitHandler<FieldValues> = (data: FieldValues) => {
+    createAccountMutation.mutate({ ...(data as Account), type }, {
+      onSuccess: () => {
+        Toast.show({
+          type: "success",
+          text1: "Register Successful",
+          text2: "Register account successfully",
+        })
+      },
+      onError: () => {
+        Toast.show({
+          type: "error",
+          text1: "Register Failure",
+          text2: "Register account failed",
+        })
+      }
+    });
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Sign Up</Text>
+      <Text style={styles.header}>{type} Registration</Text>
+      <Text style={styles.subheader}>Signup to your account</Text>
 
       <KeyboardAvoidingView behavior="padding">
+        <FVInput
+          control={control}
+          name="email"
+          errors={errors}
+          props={{
+            label: "Email",
+            keyboardType: "email-address",
+            autoCapitalize: "none",
+            style: styles.input,
+            mode: "outlined",
+          }}
+        />
 
-      <FVInput
-        control={control}
-        name="email"
-        errors={errors}
-        props={{
-          label: "Email",
-          keyboardType: "email-address",
-          autoCapitalize: "none",
-          style: styles.input,
-          mode: "outlined",
-        }}
-      />
+        <FVInput
+          control={control}
+          name="firstName"
+          errors={errors}
+          props={{
+            label: "First Name",
+            style: styles.input,
+            mode: "outlined",
+          }}
+        />
 
-      <FVInput
-        control={control}
-        name="firstName"
-        errors={errors}
-        props={{
-          label: "First Name",
-          style: styles.input,
-          mode: "outlined",
-        }}
-      />
+        <FVInput
+          control={control}
+          name="lastName"
+          errors={errors}
+          props={{
+            label: "Last Name",
+            style: styles.input,
+            mode: "outlined",
+          }}
+        />
 
-      <FVInput
-        control={control}
-        name="lastName"
-        errors={errors}
-        props={{
-          label: "Last Name",
-          style: styles.input,
-          mode: "outlined",
-        }}
-      />
+        <FVInput
+          control={control}
+          name="phoneNo"
+          errors={errors}
+          props={{
+            label: "Phone Number",
+            keyboardType: "phone-pad",
+            style: styles.input,
+            mode: "outlined",
+          }}
+        />
 
-      <FVInput
-        control={control}
-        name="phoneNo"
-        errors={errors}
-        props={{
-          label: "Phone Number",
-          keyboardType: "phone-pad",
-          style: styles.input,
-          mode: "outlined",
-        }}
-      />
+        <FVInput
+          control={control}
+          name="password"
+          errors={errors}
+          props={{
+            label: "Password",
+            secureTextEntry: true,
+            style: styles.input,
+            mode: "outlined",
+          }}
+        />
 
-      <FVInput
-        control={control}
-        name="password"
-        errors={errors}
-        props={{
-          label: "Password",
-          secureTextEntry: true,
-          style: styles.input,
-          mode: "outlined",
-        }}
-      />
-
-      <Button
-        mode="contained"
-        disabled={!isDirty || !isValid}
-        onPress={handleSubmit(handleSignup)}
-        style={styles.button}
-        contentStyle={styles.buttonContent}
-      >
-        Sign Up
-      </Button>
+        <Button
+          mode="contained"
+          disabled={!isDirty || !isValid}
+          onPress={handleSubmit(onSubmit)}
+          style={styles.button}
+        >
+          Sign Up
+        </Button>
+        <Text style={styles.signinText}>
+          Have an account?{" "}
+          <Text
+            style={styles.signinLink}
+          >
+            Sign in
+          </Text>
+        </Text>
       </KeyboardAvoidingView>
     </ScrollView>
   );
@@ -101,24 +124,34 @@ const Page = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
+    padding: 16,
     justifyContent: "center",
-    padding: 20,
   },
-  title: {
+  header: {
     fontSize: 24,
     fontWeight: "bold",
+    marginBottom: 8,
     textAlign: "center",
-    marginBottom: 20,
+  },
+  subheader: {
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: "center",
   },
   input: {
-    marginBottom: 15,
+    marginBottom: 16,
   },
   button: {
-    marginTop: 20,
-  },
-  buttonContent: {
+    marginTop: 16,
     paddingVertical: 8,
+  },
+  signinText: {
+    marginTop: 16,
+    textAlign: "center",
+  },
+  signinLink: {
+    fontWeight: "bold",
   },
 });
 
