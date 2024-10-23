@@ -2,6 +2,8 @@ import { Colors } from "@/constants/Colors";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { PaperProvider } from "react-native-paper";
+import Toast from 'react-native-toast-message';
+
 
 const customLightTheme = { colors: Colors.light };
 
@@ -15,28 +17,22 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           contentStyle: { backgroundColor: customLightTheme.colors.background },
+          headerTitle: "",
+          headerStyle: {
+            backgroundColor: customLightTheme.colors.background,
+          }
         }}
       >
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen
           name="login/[type]"
-          options={{
-            headerTitle: "",
-            headerStyle: {
-              backgroundColor: customLightTheme.colors.background,
-            },
-          }}
         />
         <Stack.Screen
           name="register/[type]"
-          options={{
-            headerTitle: "",
-            headerStyle: {
-              backgroundColor: customLightTheme.colors.background,
-            },
-          }}
         />
+        <Stack.Screen name="(farmer)"/>
       </Stack>
+      <Toast />
     </PaperProvider>
     </QueryClientProvider>
   );
