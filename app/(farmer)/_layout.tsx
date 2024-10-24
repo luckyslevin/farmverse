@@ -1,57 +1,24 @@
-import { Stack, useRouter } from 'expo-router';
-import { Appbar } from 'react-native-paper';
-import { View, StyleSheet } from 'react-native';
+import { Tabs } from "expo-router";
+import { useTheme } from "react-native-paper";
 
 export default function Layout() {
-  const router = useRouter();
-
+  const theme = useTheme()
   return (
-    <View style={styles.container}>
-      {/* Stack for handling screen transitions */}
-      <Stack style={styles.stack} >
-        <Stack.Screen name="store" />
-      </Stack>
-
-      {/* Bottom Navigation */}
-      <Appbar style={styles.bottomNav}>
-        <Appbar.Action
-          icon="home"
-          onPress={() => router.push('/home')}
-        />
-        <Appbar.Action
-          icon="magnify"
-          onPress={() => router.push('/browse')}
-        />
-        <Appbar.Action
-          icon="store"
-          onPress={() => router.push('/store')}
-        />
-        <Appbar.Action
-          icon="history"
-          onPress={() => router.push('/orderHistory')}
-        />
-        <Appbar.Action
-          icon="account"
-          onPress={() => router.push('/profile')}
-        />
-      </Appbar>
-    </View>
+    <Tabs screenOptions={{
+      tabBarStyle: {
+        backgroundColor: theme.colors.background
+      },
+      headerStyle: {
+        backgroundColor: theme.colors.background,
+      },
+      headerTintColor: theme.colors.primary,
+      tabBarActiveTintColor: theme.colors.primary,
+      tabBarInactiveTintColor: theme.colors.onSurfaceDisabled,
+    }}>
+      <Tabs.Screen name="index" options={{ title: "Products"}} />
+      <Tabs.Screen name="message" options={{ title: "Message" }} />
+      {/* <Tabs.Screen name="order-history" options={{ title: "Order History" }} />
+      <Tabs.Screen name="profile" options={{ title: "Profile" }} /> */}
+    </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  stack: {
-    flex: 1,
-  },
-  bottomNav: {
-    justifyContent: 'space-around',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 60,
-  },
-});

@@ -1,5 +1,5 @@
 import FVInput from "@/components/FVInput";
-import { Link, useLocalSearchParams } from "expo-router";
+import { Link, router, useLocalSearchParams } from "expo-router";
 import { useRef } from "react";
 
 import { FieldValues, useForm } from "react-hook-form";
@@ -23,9 +23,9 @@ export default function Page() {
     formState: { errors, isDirty, isValid },
   } = useForm({ resolver: zodResolver(schema), mode: "onChange" });
 
-  const { loginMutation } = useAccount();
+  const { login } = useAccount();
   const onSubmit = (data: FieldValues) => {
-    loginMutation.mutate(
+    login.mutate(
       { ...data, type } as { email: string; password: string; type: string },
       {
         onSuccess: (user) => {
@@ -34,6 +34,7 @@ export default function Page() {
             text1: "Login Successful",
             text2: "Login account successfully",
           });
+          router.push("/(farmer)")
         },
         onError: (err) => {
           Toast.show({

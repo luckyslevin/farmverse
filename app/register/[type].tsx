@@ -15,10 +15,10 @@ const Page = () => {
   } = useForm({ resolver: zodResolver(schema), mode: "onChange" });
   const { type } = useLocalSearchParams<{ type: "User" | "Farmer" }>();
 
-  const { createAccountMutation } = useAccount();
+  const { createAccount } = useAccount();
 
   const onSubmit: SubmitHandler<FieldValues> = (data: FieldValues) => {
-    createAccountMutation.mutate(
+    createAccount.mutate(
       { ...(data as Account), type },
       {
         onSuccess: () => {
@@ -28,7 +28,7 @@ const Page = () => {
             text2: "Register account successfully",
           });
         },
-        onError: (err) => {
+        onError: () => {
           Toast.show({
             type: "error",
             text1: "Register Failure",

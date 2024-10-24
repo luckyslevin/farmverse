@@ -15,15 +15,15 @@ export let schema = z.object({
 });
 export type Account = z.infer<typeof schema>;
 export function useAccount(): {
-  createAccountMutation: UseMutationResult<void, Error, Account, unknown>;
-  loginMutation: UseMutationResult<
+  createAccount: UseMutationResult<void, Error, Account, unknown>;
+  login: UseMutationResult<
     FirebaseFirestoreTypes.DocumentData,
     Error,
     { email: string; password: string; type: string },
     unknown
   >;
 } {
-  const createAccountMutation = useMutation({
+  const createAccount = useMutation({
     mutationFn: async (account: Account) => {
       const { user } = await auth().createUserWithEmailAndPassword(
         account.email,
@@ -40,7 +40,7 @@ export function useAccount(): {
     },
   });
 
-  const loginMutation = useMutation({
+  const login = useMutation({
     mutationFn: async ({
       email,
       password,
@@ -66,5 +66,5 @@ export function useAccount(): {
     },
   });
 
-  return { createAccountMutation, loginMutation };
+  return { createAccount, login };
 }

@@ -1,13 +1,22 @@
 import { Colors } from "@/constants/Colors";
 import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
+import { DefaultTheme as NavigationDefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
-import { PaperProvider } from "react-native-paper";
+import { adaptNavigationTheme, MD3LightTheme, PaperProvider } from "react-native-paper";
 import Toast from 'react-native-toast-message';
+import merge from "deepmerge";
 
 
-const customLightTheme = { colors: Colors.light };
+
+const customLightTheme = { ...MD3LightTheme, colors: Colors.light };
+const { LightTheme } = adaptNavigationTheme({
+  reactNavigationLight: NavigationDefaultTheme,
+});
+
+const CombinedLightTheme = merge(LightTheme, customLightTheme);
+
 
 export default function RootLayout() {
   
@@ -23,7 +32,8 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-    <PaperProvider theme={{ ...customLightTheme, roundness: 27.5 }}>
+    <PaperProvider theme={{ ...CombinedLightTheme, roundness: 27.5 }}>
+      <ThemeProvider value={CombinedLightTheme}>
       <Stack
         screenOptions={{
           contentStyle: { backgroundColor: customLightTheme.colors.background },
@@ -40,9 +50,10 @@ export default function RootLayout() {
         <Stack.Screen
           name="register/[type]"
         />
-        <Stack.Screen name="(farmer)"/>
+        <Stack.Screen name="(farmer)" options={{headerShown: false}}/>
       </Stack>
       <Toast />
+      </ThemeProvider>
     </PaperProvider>
     </QueryClientProvider>
   );

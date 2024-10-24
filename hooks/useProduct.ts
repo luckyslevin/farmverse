@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import firestore from "@react-native-firebase/firestore";
 import { z } from "zod";
 
@@ -14,10 +14,18 @@ type Product = z.infer<typeof schema>;
 
 export function useProduct() {
 
-  const createProductMutation = useMutation({
-    mutationFn: async (product: Product) => {
+  const createProduct = useMutation({
+    mutationFn: (product: Product) => {
       return firestore()
       .collection("products")
       .add(product);
     }});
+  
+    const getProducts = useQuery({
+      queryKey: ['products'],
+      queryFn: () => {
+        return firestore()
+        .collection("products")
+        .get()
+      }});
 }
