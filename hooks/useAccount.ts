@@ -50,7 +50,6 @@ export function useAccount(): {
       password: string;
       type: string;
     }) => {
-      console.log(type, email)
       const user = await firestore()
         .collection("users") // Replace 'users' with your collection name
         .where("email", "==", email) // Filter documents where email matches

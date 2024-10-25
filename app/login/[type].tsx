@@ -34,8 +34,9 @@ export default function Page() {
             text1: "Login Successful",
             text2: "Login account successfully",
           });
-          router.push("/(farmer)")
         },
+
+
         onError: (err) => {
           Toast.show({
             type: "error",
