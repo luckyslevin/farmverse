@@ -1,58 +1,61 @@
 import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
-import { useRouter, Stack, useSegments } from "expo-router";
-import { useEffect, useState } from "react";
-import { useGlobalState } from "@/hooks/useGlobalState";
+import { useRouter, Stack, useSegments, SplashScreen } from "expo-router";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { ActivityIndicator, useTheme } from "react-native-paper";
 import { View } from "react-native";
+import { useUserState } from "@/state/user";
 
-export default function App() {
-  const { data: session, setData, resetData } = useGlobalState("session");
+
+export default function Layout() {
+  const [session, setSession] = useState(null)
   const theme = useTheme();
   const segments = useSegments();
   const [initializing, setInitializing] = useState(true);
   const router = useRouter();
 
-  const onAuthStateChanged = async (user: FirebaseAuthTypes.User | null) => {
-    if (!session && user) {
-      const currentUser = await firestore()
-        .collection("users")
-        .doc(user.uid)
-        .get();
-      if (currentUser.exists) {
-        setData(currentUser.data() as any);
-      }
-    } else {
-      console.log("signout");
-      resetData();
-    }
-    if (initializing) {
-      setInitializing(false);
-    }
-    console.log("session", session);
-  };
-
   useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
+    const subscriber = auth().onAuthStateChanged(async (user: FirebaseAuthTypes.User | null) => {
+    
+      if (user && !session) {
+        const currentUser = await firestore()
+          .collection("users")
+          .doc(user.uid)
+          .get();
+        if (currentUser.exists) {
+          setSession(currentUser.data() as any);
+        }
+      } else if (!user && !session) {
+        console.log("signout");
+        setSession(null);
+      }
+      if (initializing) {
+        setInitializing(false);
+      }
+    });
     return subscriber;
   }, []);
 
-  useEffect(() => {
-    if (initializing) return;
-    const farmerGroup = segments[0] === "(farmer)";
-    const buyerGroup = segments[0] === "(buyer)";
-    console.log("segments", segments);
+  useLayoutEffect(() => {
+    if (initializing && !session) return;
+    const farmerGroup = segments[1] === "(farmer)";
+    const buyerGroup = segments[1] === "(buyer)";
+    console.log("segments", segments, session);
     if (session && !farmerGroup && session?.type === "Farmer") {
+      console.log(111);
       router.replace("/(farmer)/home");
     } else if (!session && farmerGroup) {
-      router.replace("/");
+      console.log(222);
+      router.replace({ pathname: "/login/[type]", params: { type: "Farmer" } });
     } else if (session && !buyerGroup && session?.type === "User") {
+      console.log(333);
       router.replace("/(buyer)/home");
     } else if (!session && buyerGroup) {
-      router.replace("/");
+      console.log(444);
+      router.replace({ pathname: "/login/[type]", params: { type: "User" } });
     }
-  }, [session, initializing, router, segments]);
-  if (initializing)
+  }, [session, initializing, segments, router]);
+  if (initializing) {
     return (
       <View
         style={{
@@ -64,7 +67,7 @@ export default function App() {
         <ActivityIndicator size="large" />
       </View>
     );
-
+  }
   return (
     <Stack
       screenOptions={{
@@ -77,7 +80,7 @@ export default function App() {
         },
       }}
     >
-      <Stack.Screen  name="index" options={{ headerShown: false}}/>
+      <Stack.Screen name="index" />
       <Stack.Screen name="login/[type]" />
       <Stack.Screen name="register/[type]" />
       <Stack.Screen name="(farmer)" options={{ headerShown: false }} />

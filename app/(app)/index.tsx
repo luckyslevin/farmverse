@@ -2,8 +2,8 @@ import { router } from "expo-router";
 import { View } from "react-native";
 import { Button, Text } from "react-native-paper";
 
-
 export default function Page() {
+  console.log("index rerender");
   return (
     <View style={{ flex: 1, justifyContent: "center" }}>
       <View style={{ alignItems: "center" }}>
@@ -20,7 +20,7 @@ export default function Page() {
           style={{ marginBottom: 10 }}
           mode="contained"
           onPress={() =>
-            router.replace({ pathname: "/login/[type]", params: { type: "User" } })
+            router.push({ pathname: "/login/[type]", params: { type: "User" } })
           }
         >
           Buyer
@@ -29,7 +29,7 @@ export default function Page() {
           style={{ marginBottom: 50 }}
           mode="contained"
           onPress={() =>
-            router.replace({
+            router.push({
               pathname: "/login/[type]",
               params: { type: "Farmer" },
             })

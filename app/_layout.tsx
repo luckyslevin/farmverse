@@ -10,8 +10,8 @@ import {
   PaperProvider,
 } from "react-native-paper";
 import merge from "deepmerge";
-import App from "@/components/App";
 import Toast from "react-native-toast-message";
+import { Slot } from "expo-router";
 
 const customLightTheme = { ...MD3LightTheme, colors: Colors.light };
 const { LightTheme } = adaptNavigationTheme({
@@ -26,7 +26,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <PaperProvider theme={{ ...CombinedLightTheme, roundness: 27.5 }}>
         <ThemeProvider value={CombinedLightTheme}>
-          <App />
+          <Slot/>
           <Toast />
         </ThemeProvider>
       </PaperProvider>
