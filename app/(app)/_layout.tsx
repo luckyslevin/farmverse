@@ -1,60 +1,59 @@
 import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
-import { useRouter, Stack, useSegments, SplashScreen } from "expo-router";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useRouter, Stack, useSegments } from "expo-router";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, useTheme } from "react-native-paper";
 import { View } from "react-native";
-import { useUserState } from "@/state/user";
-
+import { useAtom } from "jotai";
+import { userAtom } from "@/stores/user";
+import { useAccount } from "@/hooks/useAccount";
 
 export default function Layout() {
-  const [session, setSession] = useState(null)
+  const [session, setSession] = useAtom(userAtom);
   const theme = useTheme();
   const segments = useSegments();
   const [initializing, setInitializing] = useState(true);
   const router = useRouter();
+  const { getUser } = useAccount();
 
   useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(async (user: FirebaseAuthTypes.User | null) => {
-    
-      if (user && !session) {
-        const currentUser = await firestore()
-          .collection("users")
-          .doc(user.uid)
-          .get();
-        if (currentUser.exists) {
-          setSession(currentUser.data() as any);
+    const subscriber = auth().onAuthStateChanged(
+      async (user: FirebaseAuthTypes.User | null) => {
+        if (user) {
+          const currentUser = await getUser(user.uid)
+          if (currentUser) {
+            setSession(currentUser);
+          }
+        } else setSession(null);
+        
+        if (initializing) {
+          setInitializing(false);
         }
-      } else if (!user && !session) {
-        console.log("signout");
-        setSession(null);
       }
-      if (initializing) {
-        setInitializing(false);
-      }
-    });
+    );
     return subscriber;
   }, []);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
+    
     if (initializing && !session) return;
     const farmerGroup = segments[1] === "(farmer)";
     const buyerGroup = segments[1] === "(buyer)";
-    console.log("segments", segments, session);
+    console.log(segments)
     if (session && !farmerGroup && session?.type === "Farmer") {
-      console.log(111);
+      console.log(1111)
       router.replace("/(farmer)/home");
     } else if (!session && farmerGroup) {
-      console.log(222);
+      console.log(2222)
       router.replace({ pathname: "/login/[type]", params: { type: "Farmer" } });
     } else if (session && !buyerGroup && session?.type === "User") {
-      console.log(333);
+      console.log(3333)
       router.replace("/(buyer)/home");
     } else if (!session && buyerGroup) {
-      console.log(444);
+      console.log(4444)
       router.replace({ pathname: "/login/[type]", params: { type: "User" } });
     }
-  }, [session, initializing, segments, router]);
+  }, [session, initializing]);
   if (initializing) {
     return (
       <View

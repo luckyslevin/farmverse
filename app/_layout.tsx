@@ -12,6 +12,7 @@ import {
 import merge from "deepmerge";
 import Toast from "react-native-toast-message";
 import { Slot } from "expo-router";
+import { Provider as JotaiProvider } from "jotai"; // Import Jotai Provider
 
 const customLightTheme = { ...MD3LightTheme, colors: Colors.light };
 const { LightTheme } = adaptNavigationTheme({
@@ -24,12 +25,14 @@ export default function RootLayout() {
   const queryClient = new QueryClient();
   return (
     <QueryClientProvider client={queryClient}>
-      <PaperProvider theme={{ ...CombinedLightTheme, roundness: 27.5 }}>
-        <ThemeProvider value={CombinedLightTheme}>
-          <Slot/>
-          <Toast />
-        </ThemeProvider>
-      </PaperProvider>
+      <JotaiProvider>
+        <PaperProvider theme={{ ...CombinedLightTheme, roundness: 27.5 }}>
+          <ThemeProvider value={CombinedLightTheme}>
+            <Slot />
+            <Toast />
+          </ThemeProvider>
+        </PaperProvider>
+      </JotaiProvider>
     </QueryClientProvider>
   );
 }

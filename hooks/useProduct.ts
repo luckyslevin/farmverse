@@ -15,17 +15,12 @@ type Product = z.infer<typeof schema>;
 export function useProduct() {
 
   const createProduct = useMutation({
-    mutationFn: (product: Product) => {
-      return firestore()
-      .collection("products")
-      .add(product);
-    }});
-  
-    const getProducts = useQuery({
-      queryKey: ['products'],
-      queryFn: () => {
-        return firestore()
-        .collection("products")
-        .get()
-      }});
+    mutationFn: ({ userId, product }) => {
+      const userRef = firestore().collection('users').doc(userId);
+      return firestore().collection('products').add({
+        ...product,
+        userRef,
+      });
+    }
+  });
 }

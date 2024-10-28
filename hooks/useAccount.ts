@@ -1,6 +1,6 @@
 import auth from "@react-native-firebase/auth";
 import firestore, { FirebaseFirestoreTypes } from "@react-native-firebase/firestore";
-import { useMutation, UseMutationResult } from "@tanstack/react-query";
+import { useMutation, UseMutationResult, useQuery, UseQueryResult } from "@tanstack/react-query";
 import { z } from "zod";
 
 export let schema = z.object({
@@ -14,14 +14,15 @@ export let schema = z.object({
   type: z.enum(["User", "Farmer"]).optional(),
 });
 export type Account = z.infer<typeof schema>;
-export function useAccount(): {
+export function useAccount(userId?: string): {
   createAccount: UseMutationResult<void, Error, Account, unknown>;
   login: UseMutationResult<
     FirebaseFirestoreTypes.DocumentData,
     Error,
     { email: string; password: string; type: string },
     unknown
-  >;
+  >,
+  getUser(userId: string): Promise<FirebaseFirestoreTypes.DocumentData | null | undefined>
 } {
   const createAccount = useMutation({
     mutationFn: async (account: Account) => {
@@ -65,5 +66,13 @@ export function useAccount(): {
     },
   });
 
-  return { createAccount, login };
+  const getUser = async (userId: string) => {
+     const userDoc = await firestore().collection('users').doc(userId).get();
+      return userDoc.exists ? userDoc.data() : null
+    }
+
+
+  return { createAccount, login, getUser };
 }
+
+
