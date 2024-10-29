@@ -11,7 +11,6 @@ import { useAtom } from "jotai";
 import { userAtom } from "@/stores/user";
 import Toast from "react-native-toast-message";
 import { useAccount } from "@/hooks/useAccount";
-import { useQueryClient } from "@tanstack/react-query";
 
 export default function Page() {
   const theme = useTheme();
@@ -56,11 +55,11 @@ export default function Page() {
   return (
     <GestureHandlerRootView style={[styles.container]}>
       <Text variant="bodyLarge" style={styles.message}>
-        You Don’t Have a Store
+        {user?.store.name ?? "You Don’t Have a Store"}
       </Text>
 
       <Button mode="contained" onPress={handleSnapPress} style={styles.button}>
-        Create Store
+      {user?.store ? "Edit " : " Store" } Store
       </Button>
 
       <BottomSheet
@@ -123,7 +122,7 @@ export default function Page() {
               disabled={!isDirty || !isValid}
               onPress={handleSubmit(handleCreateStore)}
             >
-              Create Store
+              {user?.store ? "Edit " : "Create " } Store
             </Button>
           </View>
         </BottomSheetView>
