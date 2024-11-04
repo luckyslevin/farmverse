@@ -56,7 +56,7 @@ export default function Page() {
         )}
         onPress={() =>
           router.push({
-            pathname: `/(message)/[conversationId]`,
+            pathname: `/(app)/(buyer)/message/[conversationId]`,
             params: { conversationId: item.id, title: item.title },
           })
         }
