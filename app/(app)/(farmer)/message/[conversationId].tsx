@@ -1,57 +1,93 @@
-import { useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, Image } from "react-native";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import firestore, { serverTimestamp } from "@react-native-firebase/firestore";
 
 import { GiftedChat } from "react-native-gifted-chat";
+import { useAtomValue } from "jotai";
+import { userAtom } from "@/stores/user";
 
 const Page = () => {
   const [messages, setMessages] = useState([]);
-  const { conversationId, title } = useLocalSearchParams();
-  console.log(conversationId, title);
+  const { conversationId, userName, userId } = useLocalSearchParams();
+  const currentUser = useAtomValue(userAtom);
+
+  // useFocusEffect(
+  //   useCallback(() => {
+
+  //     const unsubscribe = firestore()
+  //       .collection("messages")
+  //       .where("conversationId", "==", conversationId)
+  //       .orderBy("timestamp", "desc")
+  //       .onSnapshot((snapshot) => {
+  //         if (snapshot != null) {
+  //           const loadedMessages = snapshot?.docs.map((doc) => ({
+  //             _id: doc.id,
+  //             text: doc.data().text,
+  //             createdAt: doc.data().timestamp.toDate(),
+  //             user: { _id: doc.data().senderId, name: doc.data().senderName },
+  //           }));
+  //           setMessages(loadedMessages);
+  //         }
+  //       });
+  //     return unsubscribe;
+  //   }, [conversationId])
+  // );
+
   useEffect(() => {
-    setMessages([
-      {
-        _id: 1,
-        text: "Hello developer",
-        createdAt: new Date(),
-        user: {
-          _id: 2,
-          name: "React Native",
-          avatar: "https://pbs.twimg.com/profile_images/1564203599747600385/f6Lvcpcu_400x400.jpg",
-        },
-      },
-    ]);
-  }, []);
-  const onSend = useCallback((messages = []) => {
-    setMessages((previousMessages) =>
-      GiftedChat.append(previousMessages, messages)
-    );
+    const unsubscribe = firestore()
+      .collection("messages")
+      .where("conversationId", "==", conversationId) // Replace with actual conversation ID
+      .orderBy("timestamp", "desc")
+      .onSnapshot((snapshot) => {
+        if (snapshot != null) {
+          const loadedMessages = snapshot?.docs.map((doc) => {
+            console.log(doc.data());
+            return {
+              _id: doc.id,
+              text: doc.data().text,
+              createdAt: doc.data()?.timestamp?.toDate(),
+              user: { _id: doc.data().senderId, name: doc.data().senderName },
+            };
+          });
+
+          setMessages(loadedMessages);
+        }
+      });
+    return () => unsubscribe();
   }, []);
 
-  const headerTitle = useMemo(
-    () => (
-      <View
-        style={{
-          flexDirection: "row",
-          width: 220,
-          alignItems: "center",
-          gap: 10,
-          paddingBottom: 4,
-        }}
-      >
-        <Image
-          source={{
-            uri: "https://pbs.twimg.com/profile_images/1564203599747600385/f6Lvcpcu_400x400.jpg",
-          }}
-          style={{ width: 40, height: 40, borderRadius: 50 }}
-        />
-        <Text style={{ fontSize: 16, fontWeight: "500" }}>
-          {title || "Simon Grimm"}
-        </Text>
-      </View>
-    ),
-    [title]
-  );
+  const onSend = (newMessages = []) => {
+    try {
+      const message = newMessages[0];
+      const timestamp = serverTimestamp();
+      console.log("farmer", currentUser?.store.name);
+      firestore().collection("messages").add({
+        conversationId: conversationId, // Replace with actual conversation ID
+        text: message?.text,
+        timestamp: timestamp,
+        senderId: currentUser?.id,
+        senderName: currentUser?.store?.name,
+      });
+
+      firestore()
+        .collection("conversations")
+        .doc(conversationId)
+        .update({
+          lastMessage: {
+            text: message.text,
+            timestamp: timestamp,
+            senderId: currentUser?.id,
+          },
+          updatedAt: timestamp,
+        });
+
+      setMessages((previousMessages) =>
+        GiftedChat.append(previousMessages, newMessages)
+      );
+    } catch (error) {
+      console.error("Error adding message:", error);
+    }
+  };
 
   return (
     <>
@@ -62,11 +98,12 @@ const Page = () => {
         renderAvatarOnTop={true}
         onSend={(messages) => onSend(messages)}
         user={{
-          _id: 1,
+          _id: currentUser?.id,
+          name: currentUser?.firstName,
         }}
       />
     </>
   );
-}
+};
 
-export default Page
+export default Page;

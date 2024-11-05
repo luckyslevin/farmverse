@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, FlatList } from "react-native";
-import { Avatar, Button, Card, Text, Chip } from "react-native-paper";
-import firestore, { Filter } from "@react-native-firebase/firestore";
+import { Button, Card, Text } from "react-native-paper";
+import firestore from "@react-native-firebase/firestore";
 import { useRouter } from "expo-router";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/user";
@@ -9,7 +9,6 @@ import { userAtom } from "@/stores/user";
 export default function FarmersList() {
   const [farmers, setFarmers] = useState([]);
   const router = useRouter();
-  console.log("store")
   const currentUser = useAtomValue(userAtom);
   useEffect(() => {
     const fetchFarmers = async () => {
@@ -60,7 +59,7 @@ export default function FarmersList() {
           lastMessage: {
             text: "",
             timestamp: null,
-            senderID: null,
+            senderId: null,
           },
           createdAt: new Date(),
           updatedAt: new Date(),

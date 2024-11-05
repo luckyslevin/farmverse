@@ -29,7 +29,7 @@ export default function Page() {
   }, []);
 
   const [user, setUser] = useAtom(userAtom)
-  useEffect(() => console.log("store", user), [user])
+  
   const handleCreateStore = (data: any) => {
     createStoreUser.mutate({userId: user.id, store: data}, {
       onSuccess: async () => {
@@ -55,7 +55,7 @@ export default function Page() {
   return (
     <GestureHandlerRootView style={[styles.container]}>
       <Text variant="bodyLarge" style={styles.message}>
-        {user?.store.name ?? "You Don’t Have a Store"}
+        {user?.store?.name ?? "You Don’t Have a Store"}
       </Text>
 
       <Button mode="contained" onPress={handleSnapPress} style={styles.button}>

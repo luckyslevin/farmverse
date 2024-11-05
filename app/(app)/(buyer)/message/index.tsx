@@ -1,63 +1,78 @@
-import { useRouter } from "expo-router";
-import React from "react";
-import { FlatList, StyleSheet, View } from "react-native";
-import { List, Avatar, IconButton, Divider } from "react-native-paper";
+import React, { useEffect, useState } from 'react';
+import { FlatList, StyleSheet, View, Text } from 'react-native';
+import { List, Divider } from 'react-native-paper';
+import firestore from '@react-native-firebase/firestore';
+import { useRouter } from 'expo-router';
+import { userAtom } from '@/stores/user';
+import { useAtomValue } from 'jotai';
 
-const conversations = [
-  {
-    id: "1",
-    title: "Ken's Store",
-    message: "Hey!",
-    image: "https://example.com/ken.jpg",
-  },
-  {
-    id: "2",
-    title: "Rina's Store",
-    message: "Hellaur, how you doin’",
-    image: "https://example.com/rina.jpg",
-  },
-  {
-    id: "3",
-    title: "Han's Store",
-    message: "YOHOO! Big Summer Blowout",
-    image: "https://example.com/han.jpg",
-  },
-  {
-    id: "4",
-    title: "Odette",
-    message: "Hellaur, how you doin’",
-    image: "https://example.com/odette.jpg",
-  },
-  {
-    id: "5",
-    title: "Oaken",
-    message: "YOHOO! Big Summer Blowout",
-    image: "https://example.com/oaken.jpg",
-  },
-];
 
-export default function Page() {
+export default function ConversationList() {
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const currentUser = useAtomValue(userAtom);
   const router = useRouter();
-  console.log("index")
-  
+
+  useEffect(() => {
+    const fetchConversations = async () => {
+      const unsubscribe = firestore()
+        .collection('conversations')
+        .where('participants', 'array-contains', currentUser.id)
+        .orderBy('updatedAt', 'desc')
+        .onSnapshot(async (snapshot) => {
+          if (!snapshot.empty) {
+            console.log("buyerssss", currentUser.id)
+            const fetchedConversations = await Promise.all(
+              snapshot.docs.map(async (doc) => {
+                const conversationData = doc.data();
+                const otherUserId = conversationData.participants.find(
+                  (id) => id !== currentUser.id
+                );
+
+                const userDoc = await firestore()
+                  .collection('users')
+                  .doc(otherUserId)
+                  .get();
+
+                const user = userDoc.exists
+                  ? userDoc.data()
+                  : 'Unknown Store';
+
+                return {
+                  id: doc.id,
+                  ...conversationData,
+                  user: user,
+                };
+              })
+            );
+            setConversations(fetchedConversations);
+          } else {
+            console.log('No conversations found.');
+            setConversations([]);
+          }
+          setLoading(false);
+        }, (error) => {
+          console.error('Error fetching conversations:', error);
+          setLoading(false);
+        });
+
+      return () => unsubscribe();
+    };
+
+    fetchConversations();
+  }, []);
+
   const renderItem = ({ item }) => (
     <View>
       <List.Item
-        title={item.title}
-        titleStyle={styles.title}
-        description={item.message}
-        descriptionStyle={styles.description}
-        left={() => <Avatar.Image size={50} source={{ uri: item.image }} />}
-        right={() => (
-          <IconButton
-            icon="dots-vertical"
-            onPress={() => console.log("More options")}
-          />
-        )}
+        title={item.user.store.name}
+        description={item.lastMessage.text}
+        descriptionNumberOfLines={1}
+        right={() => <Text>{item.lastMessage?.timestamp?.toDate()?.toLocaleString()}</Text>}
         onPress={() =>
           router.push({
-            pathname: `/(app)/(buyer)/message/[conversationId]`,
-            params: { conversationId: item.id, title: item.title },
+            pathname: '/(app)/(buyer)/message/[conversationId]',
+            params: { conversationId: item.id, userId: item.user.id , userName: item.user.store.name},
           })
         }
         style={styles.listItem}
@@ -65,6 +80,14 @@ export default function Page() {
       <Divider style={styles.divider} />
     </View>
   );
+
+  if (loading) {
+    return <Text>Loading conversations...</Text>;
+  }
+
+  if (conversations.length === 0) {
+    return <Text>No conversations found.</Text>;
+  }
 
   return (
     <FlatList
@@ -81,13 +104,8 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   listItem: {
-    paddingVertical: 5,
+    paddingVertical: 10,
   },
-  title: {
-    fontWeight: "bold",
-    fontSize: 18,
-  },
-  description: {},
   divider: {
     marginVertical: 5,
   },

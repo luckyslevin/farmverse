@@ -9,7 +9,6 @@ export const unstable_settings = {
 
 const Layout = () => {
   const theme = useTheme();
-  console.log("layout")
   return (
     <Stack
       screenOptions={{
