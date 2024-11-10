@@ -4,9 +4,9 @@ import { z } from "zod";
 
 export const schema = z.object({
   name: z.string().min(1),
-  description: z.string(),
-  type: z.string(),
-  address: z.string(),
+  description: z.string().optional(),
+  type: z.string().min(1),
+  address: z.string().min(1),
   createdAt: z.date().optional()
 });
 

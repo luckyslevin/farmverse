@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, FlatList } from "react-native";
-import { Button, Card, Text } from "react-native-paper";
+import { Button, Card, Text, useTheme } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
 import { useRouter } from "expo-router";
 import { useAtomValue } from "jotai";
@@ -10,6 +10,7 @@ export default function FarmersList() {
   const [farmers, setFarmers] = useState([]);
   const router = useRouter();
   const currentUser = useAtomValue(userAtom);
+  const theme = useTheme();
   useEffect(() => {
     const fetchFarmers = async () => {
       try {
@@ -74,7 +75,7 @@ export default function FarmersList() {
   };
 
   const renderFarmer = ({ item }) => (
-    <Card style={styles.card}>
+    <Card style={styles.card} mode="contained">
       <Card.Content>
         <View style={styles.header}>
           {/* <Avatar.Image size={60} source={{ uri: item.image }} /> */}
@@ -105,7 +106,7 @@ export default function FarmersList() {
       data={farmers}
       keyExtractor={(item) => item.id}
       renderItem={renderFarmer}
-      contentContainerStyle={styles.container}
+      contentContainerStyle={[styles.container, {backgroundColor: theme.colors.primary}]}
     />
   );
 }

@@ -35,7 +35,8 @@ export default function Layout() {
         )
       }}
     >
-      <Tabs.Screen name="store" options={{ title: "My Store" }} />
+      <Tabs.Screen name="home" options={{ title: "Home" }} />
+      <Tabs.Screen name="store" options={{ headerShown: false, title: "My Store" }} />
       <Tabs.Screen name="message" options={{ headerShown: false, title: "Message" }} />
     </Tabs>
   );
