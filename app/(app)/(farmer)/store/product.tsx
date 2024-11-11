@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Image } from 'react-native';
 import { Button, TextInput, Card } from 'react-native-paper';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
@@ -12,6 +12,7 @@ export default function CreateProduct() {
   const [productName, setProductName] = useState('');
   const [category, setCategory] = useState('');
   const [price, setPrice] = useState('');
+  const [quantity, setQuantity] = useState('');
   const [description, setDescription] = useState('');
   const [imageUri, setImageUri] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -22,7 +23,7 @@ export default function CreateProduct() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [4, 3],
+      // aspect: [4, 3],
       quality: 1,
     });
 
@@ -62,6 +63,7 @@ export default function CreateProduct() {
         name: productName,
         category: category,
         price: parseFloat(price),
+        quantity: parseInt(quantity),
         description: description,
         imageUrl: imageUrl,
         userRef: firestore().collection('users').doc(currentUser.id), // Reference to the user document
@@ -101,6 +103,14 @@ export default function CreateProduct() {
         mode="outlined"
       />
       <TextInput
+        label="Quantity"
+        value={quantity}
+        onChangeText={setQuantity}
+        mode="outlined"
+        keyboardType="numeric"
+        style={styles.input}
+      />
+      <TextInput
         label="Description"
         value={description}
         onChangeText={setDescription}
@@ -114,9 +124,10 @@ export default function CreateProduct() {
       </Button>
 
       {imageUri && (
-        <Card style={styles.imageCard}>
-          <Card.Cover source={{ uri: imageUri }} style={styles.image} />
-        </Card>
+        // <Card style={styles.imageCard} mode="contained">
+        //   <Card.Cover source={{ uri: imageUri }} style={styles.image} />
+        // </Card>
+          <Image source={{ uri: imageUri }} style={styles.image} />
       )}
 
       {uploading ? (
@@ -147,8 +158,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   image: {
-    width: 150,
+    width: '100%',
     height: 150,
+    resizeMode: 'cover'
   },
   loading: {
     marginVertical: 20,
