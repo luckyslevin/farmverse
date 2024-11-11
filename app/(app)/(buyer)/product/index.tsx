@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet, ActivityIndicator, Dimensions } from 'react-native';
 import { Card, Text, Avatar } from 'react-native-paper';
 import firestore from '@react-native-firebase/firestore';
+import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 40) / 2; // 20 padding on each side and 2 cards per row
 const CARD_HEIGHT = 230; // Fixed height for each card
 
-export default function ProductGrid() {
+export default function Product() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,7 +45,7 @@ export default function ProductGrid() {
   }, []);
 
   const renderItem = ({ item }) => (
-    <Card style={styles.card}>
+    <Card style={styles.card} onPress={() => router.push({pathname: "/product/[id]", params: {id: item.id}})}>
       <Card.Cover source={{ uri: item.imageUrl }} style={styles.image} />
       <Card.Content>
         <Text style={styles.productName}>{item.name}</Text>
@@ -70,7 +71,6 @@ export default function ProductGrid() {
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           numColumns={2}
-          contentContainerStyle={styles.flatListContainer}
         />
       )}
     </View>
@@ -82,13 +82,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#eaf2d7', // Light green background
   },
-  flatListContainer: {
-    padding: 10,
-  },
   card: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
     margin: 10,
+    // marginHorizontal: 10, // Equal horizontal margins for balance
     borderRadius: 10,
     overflow: 'hidden',
     backgroundColor: '#ffffff',

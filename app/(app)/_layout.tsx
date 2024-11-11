@@ -48,7 +48,7 @@ export default function Layout() {
       router.replace({ pathname: "/login/[type]", params: { type: "Farmer" } });
     } else if (session && !buyerGroup && session?.type === "User") {
       console.log(3333)
-      router.replace("/(buyer)/home");
+      router.replace("/(buyer)/product");
     } else if (!session && buyerGroup) {
       console.log(4444)
       router.replace({ pathname: "/login/[type]", params: { type: "User" } });
