@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Image, View, ScrollView, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
+import { Image, View, ScrollView, StyleSheet, Dimensions, ActivityIndicator, Alert } from 'react-native';
 import { Text, Avatar, Button } from 'react-native-paper';
 import firestore from '@react-native-firebase/firestore';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useAtomValue } from 'jotai';
+import { userAtom } from '@/stores/user';
 
 const { width } = Dimensions.get('window');
 
@@ -11,6 +13,7 @@ export default function ProductDetailPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const { id } = useLocalSearchParams()
+  const currentUser = useAtomValue(userAtom)
 
   useEffect(() => {
     const fetchProductAndUser = async () => {
@@ -19,7 +22,7 @@ export default function ProductDetailPage() {
         const productDoc = await firestore().collection('products').doc(id).get();
         if (productDoc.exists) {
           const productData = productDoc.data();
-          setProduct(productData);
+          setProduct({id, ...productData});
 
           // Fetch user data referenced in userRef
           const userDoc = await productData.userRef.get();
@@ -36,6 +39,39 @@ export default function ProductDetailPage() {
 
     fetchProductAndUser();
   }, []);
+
+  const addToCart = async () => {
+    try {
+      const cartItemRef = firestore()
+        .collection('users')
+        .doc(currentUser.id)
+        .collection('carts')
+        .doc(product.id); // Using product ID as the cart item ID
+  
+      // Use a transaction to ensure atomic read-modify-write
+      await firestore().runTransaction(async (transaction) => {
+        const cartItemDoc = await transaction.get(cartItemRef);
+  
+        if (cartItemDoc.exists) {
+          // If item already exists in the cart, increment the quantity
+          const newQuantity = cartItemDoc.data().quantity + 1;
+          transaction.update(cartItemRef, { quantity: newQuantity });
+        } else {
+          // If item does not exist in the cart, set initial quantity to 1
+          transaction.set(cartItemRef, {
+            productRef: firestore().doc(`products/${product.id}`),
+            quantity: 1,
+          });
+        }
+      });
+  
+      Alert.alert('Success', 'Product added to cart!');
+    } catch (error) {
+      console.error("Error adding product to cart:", error);
+      Alert.alert('Error', 'Could not add product to cart.');
+    }
+  };
+
 
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" style={{ flex: 1, justifyContent: 'center' }} />;
@@ -71,17 +107,16 @@ export default function ProductDetailPage() {
       <View style={styles.descriptionContainer}>
         <Text style={styles.sectionTitle}>Product Description</Text>
         <Text style={styles.descriptionText}>
-          {product?.description ||
-            "This is a placeholder description for the product. It gives details about the product, its features, and any additional information a buyer might need."}
+        {product?.description || "No description available for this product."}
         </Text>
       </View>
 
       {/* Action Buttons */}
       <View style={styles.buttonContainer}>
-        <Button mode="outlined" style={styles.addToCartButton}>
+        <Button mode="outlined" style={styles.addToCartButton} onPress={addToCart}>
           Add to Cart
         </Button>
-        <Button mode="contained" style={styles.buyNowButton}>
+        <Button mode="contained" style={styles.buyNowButton} onPress={() => router.push('/product/cart')}>
           Buy Now
         </Button>
       </View>
