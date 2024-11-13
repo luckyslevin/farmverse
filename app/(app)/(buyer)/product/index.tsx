@@ -1,10 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, ActivityIndicator, Dimensions } from 'react-native';
-import { Card, Text, Avatar } from 'react-native-paper';
-import firestore from '@react-native-firebase/firestore';
-import { router } from 'expo-router';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  ActivityIndicator,
+  Dimensions,
+} from "react-native";
+import { Card, Text, Avatar } from "react-native-paper";
+import firestore from "@react-native-firebase/firestore";
+import { router } from "expo-router";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 40) / 2; // 20 padding on each side and 2 cards per row
 const CARD_HEIGHT = 230; // Fixed height for each card
 
@@ -18,7 +24,7 @@ export default function Product() {
       setLoading(true);
       const productList = [];
 
-      const productsSnapshot = await firestore().collection('products').get();
+      const productsSnapshot = await firestore().collection("products").get();
 
       // For each product, fetch the user details using userRef
       for (const doc of productsSnapshot.docs) {
@@ -32,7 +38,7 @@ export default function Product() {
         productList.push({
           id: doc.id,
           ...productData,
-          user: userData
+          user: userData,
           // sellerAvatar: userData.avatar,
         });
       }
@@ -45,13 +51,21 @@ export default function Product() {
   }, []);
 
   const renderItem = ({ item }) => (
-    <Card style={styles.card} onPress={() => router.push({pathname: "/product/[id]", params: {id: item.id}})}>
+    <Card
+      style={styles.card}
+      onPress={() =>
+        router.push({ pathname: "/product/[id]", params: { id: item.id } })
+      }
+    >
       <Card.Cover source={{ uri: item.imageUrl }} style={styles.image} />
       <Card.Content>
         <Text style={styles.productName}>{item.name}</Text>
         <View style={styles.sellerContainer}>
-          {/* <Avatar.Image size={20} source={{ uri: item.user.avatar }} /> */}
-          <Avatar.Text size={20} label="t" />
+          {item.user.store?.avatarUrl ? (
+            <Avatar.Image size={20} source={{ uri: item.user.store.avatarUrl }} />
+          ) : (
+            <Avatar.Text size={20} label="t" />
+          )}
           <Text style={styles.sellerName}>{item.user.store.name}</Text>
         </View>
       </Card.Content>
@@ -61,19 +75,20 @@ export default function Product() {
     </Card>
   );
 
-  return (<>
-    <View style={styles.container}>
-      {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" />
-      ) : (
-        <FlatList
-          data={products}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-        />
-      )}
-    </View>
+  return (
+    <>
+      <View style={styles.container}>
+        {loading ? (
+          <ActivityIndicator size="large" color="#0000ff" />
+        ) : (
+          <FlatList
+            data={products}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+          />
+        )}
+      </View>
     </>
   );
 }
@@ -81,7 +96,7 @@ export default function Product() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#eaf2d7', // Light green background
+    backgroundColor: "#eaf2d7", // Light green background
   },
   card: {
     width: CARD_WIDTH,
@@ -89,39 +104,39 @@ const styles = StyleSheet.create({
     margin: 10,
     // marginHorizontal: 10, // Equal horizontal margins for balance
     borderRadius: 10,
-    overflow: 'hidden',
-    backgroundColor: '#ffffff',
+    overflow: "hidden",
+    backgroundColor: "#ffffff",
   },
   image: {
     height: 120,
-    width: '100%',
-    resizeMode: 'cover',
-    borderRadius: 0
+    width: "100%",
+    resizeMode: "cover",
+    borderRadius: 0,
   },
   productName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginVertical: 5,
-    color: '#2f4f4f', // Dark green color for text
+    color: "#2f4f4f", // Dark green color for text
   },
   sellerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 5,
   },
   sellerName: {
     marginLeft: 5,
     fontSize: 14,
-    color: '#4f4f4f',
+    color: "#4f4f4f",
   },
   cardActions: {
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     paddingHorizontal: 10,
     paddingBottom: 10,
   },
   price: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
   },
 });
