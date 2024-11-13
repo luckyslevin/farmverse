@@ -1,3 +1,4 @@
+import Header from "@/components/Header";
 import { Stack } from "expo-router";
 import { memo } from "react";
 import { useTheme } from "react-native-paper";
@@ -18,7 +19,10 @@ const Layout = () => {
         headerStyle: {
           backgroundColor: theme.colors.background,
         },
-        title: 'Message'
+        title: 'Message',
+        headerRight: () => (
+          <Header/>
+        )
       }}
     />
   );

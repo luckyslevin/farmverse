@@ -1,14 +1,10 @@
-import { MaterialIcons } from "@expo/vector-icons";
+import Header from "@/components/Header";
 import { Tabs } from "expo-router";
-import { IconButton, useTheme } from "react-native-paper";
-import auth from "@react-native-firebase/auth";
+import { useTheme } from "react-native-paper";
 
 export default function Layout() {
   const theme = useTheme();
 
-  const onLogout = () => {
-    auth().signOut();
-  };
   return (
     <Tabs
       screenOptions={{
@@ -22,21 +18,18 @@ export default function Layout() {
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onSurfaceDisabled,
         headerRight: () => (
-          <IconButton
-            icon={() => (
-              <MaterialIcons
-                name="logout"
-                size={24}
-                color={theme.colors.primary}
-              />
-            )}
-            onPress={onLogout}
-          />
-        ),
+          <Header/>
+        )
       }}
     >
-      <Tabs.Screen name="product" options={{ headerShown: false, title: "Products" }} />
-      <Tabs.Screen name="message" options={{ headerShown: false, title: "Message" }} />
+      <Tabs.Screen
+        name="product"
+        options={{ headerShown: false, title: "Products" }}
+      />
+      <Tabs.Screen
+        name="message"
+        options={{ headerShown: false, title: "Message" }}
+      />
       <Tabs.Screen name="store" options={{ title: "Store" }} />
     </Tabs>
   );

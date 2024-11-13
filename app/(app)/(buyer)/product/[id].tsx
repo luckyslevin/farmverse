@@ -5,6 +5,7 @@ import firestore from '@react-native-firebase/firestore';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import { userAtom } from '@/stores/user';
+import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 
@@ -64,11 +65,16 @@ export default function ProductDetailPage() {
           });
         }
       });
-  
-      Alert.alert('Success', 'Product added to cart!');
+      Toast.show({
+        type: "success",
+        text1: "Product added to cart.",
+      });
     } catch (error) {
       console.error("Error adding product to cart:", error);
-      Alert.alert('Error', 'Could not add product to cart.');
+      Toast.show({
+        type: "errror",
+        text1: "Could not add product to cart!",
+      });
     }
   };
 
