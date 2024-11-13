@@ -333,7 +333,9 @@ export default function CartPage() {
 
   const handleQuantityChange = async (storeName, itemId, increment) => {
     const updatedCartData = [...cartData];
-    const storeIndex = updatedCartData.findIndex((store) => store.store.storeName === storeName);
+    console.log("ddd", updatedCartData, storeName)
+    const storeIndex = updatedCartData.findIndex((cart) => cart.store.store?.name === storeName);
+    console.log(storeIndex)
     if (storeIndex === -1) return;
 
     const itemIndex = updatedCartData[storeIndex].items.findIndex((item) => item.id === itemId);
@@ -402,13 +404,13 @@ export default function CartPage() {
                   <View style={styles.quantityContainer}>
                     <IconButton
                       icon="minus"
-                      onPress={() => handleQuantityChange(storeGroup.store.storeName, item.id, -1)}
+                      onPress={() => handleQuantityChange(storeGroup?.store?.store?.name, item.id, -1)}
                       style={styles.quantityButton}
                     />
                     <Text style={styles.quantityText}>{item.quantity}</Text>
                     <IconButton
                       icon="plus"
-                      onPress={() => handleQuantityChange(storeGroup.store.storeName, item.id, 1)}
+                      onPress={() => handleQuantityChange(storeGroup?.store?.store?.name, item.id, 1)}
                       style={styles.quantityButton}
                     />
                   </View>
