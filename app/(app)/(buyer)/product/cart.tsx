@@ -8,6 +8,8 @@ import { userAtom } from "@/stores/user";
 export default function CartPage() {
   const [cartData, setCartData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedItems, setSelectedItems] = useState({}); // Track selected items by item
+  const [selectedStores, setSelectedStores] = useState({}); // Track selected stores
   const currentUser = useAtomValue(userAtom);
 
   useEffect(() => {
@@ -32,7 +34,6 @@ export default function CartPage() {
             const storeData = storeDoc.data();
 
             const storeName = storeData.store.name;
-            console.log(storeName)
             // Group items by store
             if (!fetchedCartData[storeName]) {
               fetchedCartData[storeName] = {
@@ -49,7 +50,7 @@ export default function CartPage() {
             });
           })
         );
-        console.log(fetchedCartData)
+
         setCartData(Object.values(fetchedCartData)); // Convert object to array for rendering
       } catch (error) {
         console.error("Error fetching cart data:", error);
@@ -63,9 +64,7 @@ export default function CartPage() {
 
   const handleQuantityChange = async (storeName, itemId, increment) => {
     const updatedCartData = [...cartData];
-    console.log("ddd", updatedCartData, storeName)
     const storeIndex = updatedCartData.findIndex((cart) => cart.store.store?.name === storeName);
-    console.log(storeIndex)
     if (storeIndex === -1) return;
 
     const itemIndex = updatedCartData[storeIndex].items.findIndex((item) => item.id === itemId);
@@ -75,7 +74,6 @@ export default function CartPage() {
     const newQuantity = item.quantity + increment;
 
     if (newQuantity <= 0) {
-      // Remove item from Firestore if quantity is 0
       await firestore()
         .collection("users")
         .doc(currentUser.id)
@@ -83,14 +81,11 @@ export default function CartPage() {
         .doc(itemId)
         .delete();
 
-      // Remove item from cartData state
       updatedCartData[storeIndex].items.splice(itemIndex, 1);
-      // Remove the store group if no items left
       if (updatedCartData[storeIndex].items.length === 0) {
         updatedCartData.splice(storeIndex, 1);
       }
     } else {
-      // Update quantity in Firestore
       await firestore()
         .collection("users")
         .doc(currentUser.id)
@@ -98,11 +93,86 @@ export default function CartPage() {
         .doc(itemId)
         .update({ quantity: newQuantity });
 
-      // Update quantity in cartData state
       item.quantity = newQuantity;
     }
 
     setCartData(updatedCartData);
+  };
+
+  const handleItemCheckboxToggle = (storeName, itemId) => {
+    setSelectedItems((prevSelectedItems) => {
+      const key = `${storeName}-${itemId}`;
+      const updatedSelectedItems = { ...prevSelectedItems };
+
+      if (updatedSelectedItems[key]) {
+        delete updatedSelectedItems[key];
+      } else {
+        updatedSelectedItems[key] = true;
+      }
+
+      return updatedSelectedItems;
+    });
+  };
+
+  const handleStoreCheckboxToggle = (storeName) => {
+    setSelectedStores((prevSelectedStores) => {
+      const updatedSelectedStores = { ...prevSelectedStores };
+      const isSelected = !updatedSelectedStores[storeName];
+
+      if (isSelected) {
+        updatedSelectedStores[storeName] = true;
+        cartData.find((storeGroup) => storeGroup.store.store.name === storeName).items.forEach((item) => {
+          setSelectedItems((prevSelectedItems) => ({
+            ...prevSelectedItems,
+            [`${storeName}-${item.id}`]: true,
+          }));
+        });
+      } else {
+        delete updatedSelectedStores[storeName];
+        setSelectedItems((prevSelectedItems) => {
+          const updatedSelectedItems = { ...prevSelectedItems };
+          cartData.find((storeGroup) => storeGroup.store.store.name === storeName).items.forEach((item) => {
+            delete updatedSelectedItems[`${storeName}-${item.id}`];
+          });
+          return updatedSelectedItems;
+        });
+      }
+
+      return updatedSelectedStores;
+    });
+  };
+
+  const handleSelectAllToggle = () => {
+    const allSelected =
+      Object.keys(selectedItems).length ===
+      cartData.reduce((count, storeGroup) => count + storeGroup.items.length, 0);
+
+    if (allSelected) {
+      setSelectedStores({});
+      setSelectedItems({});
+    } else {
+      const newSelectedStores = {};
+      const newSelectedItems = {};
+
+      cartData.forEach((storeGroup) => {
+        newSelectedStores[storeGroup.store.store.name] = true;
+        storeGroup.items.forEach((item) => {
+          newSelectedItems[`${storeGroup.store.store.name}-${item.id}`] = true;
+        });
+      });
+
+      setSelectedStores(newSelectedStores);
+      setSelectedItems(newSelectedItems);
+    }
+  };
+
+  const calculateTotal = () => {
+    return cartData.reduce((total, storeGroup) => {
+      return total + storeGroup.items.reduce((storeTotal, item) => {
+        const key = `${storeGroup.store.store.name}-${item.id}`;
+        return storeTotal + (selectedItems[key] ? item.product.price * item.quantity : 0);
+      }, 0);
+    }, 0);
   };
 
   if (loading) {
@@ -116,14 +186,20 @@ export default function CartPage() {
       {cartData.map((storeGroup) => (
         <View key={storeGroup.store.store.name}>
           <View style={styles.storeHeader}>
-            <Checkbox status="unchecked" />
-            <Text style={styles.storeName}>{storeGroup?.store?.store?.name ?? 'Na'}</Text>
+            <Checkbox
+              status={selectedStores[storeGroup.store.store.name] ? 'checked' : 'unchecked'}
+              onPress={() => handleStoreCheckboxToggle(storeGroup.store.store.name)}
+            />
+            <Text style={styles.storeName}>{storeGroup?.store?.store?.name ?? 'N/A'}</Text>
           </View>
           <Divider />
           {storeGroup.items.map((item) => (
             <Card key={item.id} style={styles.cartItem}>
               <View style={styles.itemHeader}>
-                <Checkbox status="unchecked" />
+                <Checkbox
+                  status={selectedItems[`${storeGroup.store.store.name}-${item.id}`] ? 'checked' : 'unchecked'}
+                  onPress={() => handleItemCheckboxToggle(storeGroup.store.store.name, item.id)}
+                />
                 <Text style={styles.itemName}>{item.product.name}</Text>
                 <IconButton icon="dots-vertical" />
               </View>
@@ -134,13 +210,13 @@ export default function CartPage() {
                   <View style={styles.quantityContainer}>
                     <IconButton
                       icon="minus"
-                      onPress={() => handleQuantityChange(storeGroup?.store?.store?.name, item.id, -1)}
+                      onPress={() => handleQuantityChange(storeGroup.store.store.name, item.id, -1)}
                       style={styles.quantityButton}
                     />
                     <Text style={styles.quantityText}>{item.quantity}</Text>
                     <IconButton
                       icon="plus"
-                      onPress={() => handleQuantityChange(storeGroup?.store?.store?.name, item.id, 1)}
+                      onPress={() => handleQuantityChange(storeGroup.store.store.name, item.id, 1)}
                       style={styles.quantityButton}
                     />
                   </View>
@@ -151,10 +227,17 @@ export default function CartPage() {
         </View>
       ))}
 
-      {/* Footer Section */}
       <View style={styles.footer}>
-        <Checkbox status="unchecked" />
-        <Text>Total: ₱{cartData.reduce((total, storeGroup) => total + storeGroup.items.reduce((storeTotal, item) => storeTotal + item.product.price * item.quantity, 0), 0)}</Text>
+        <Checkbox
+          status={
+            Object.keys(selectedItems).length ===
+            cartData.reduce((count, storeGroup) => count + storeGroup.items.length, 0)
+              ? "checked"
+              : "unchecked"
+          }
+          onPress={handleSelectAllToggle}
+        />
+        <Text>Total: ₱{calculateTotal()}</Text>
         <Button mode="contained" style={styles.checkoutButton}>
           Check Out
         </Button>
