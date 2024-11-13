@@ -15,14 +15,16 @@ import {
   Card,
   Title,
   Paragraph,
+  HelperText,
 } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
-
+import storage from "@react-native-firebase/storage";
+import * as ImagePicker from "expo-image-picker";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import FVInput from "@/components/FVInput";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import useStore, { schema } from "@/hooks/useStore";
 import { useAtom } from "jotai";
 import { userAtom } from "@/stores/user";
@@ -36,11 +38,13 @@ export default function Page() {
   const snapPoints = useMemo(() => ["25%", "50%", "70%", "100%"], []);
   const [user, setUser] = useAtom(userAtom);
   const [products, setProducts] = useState([]);
+  const [avatarUri, setAvatarUri] = useState(user.store?.avatarUrl);
 
   const {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isDirty, isValid },
   } = useForm({
     resolver: zodResolver(schema),
@@ -78,11 +82,19 @@ export default function Page() {
     return () => unsubscribe();
   }, []);
 
-  const handleCreateStore = (data: any) => {
+  const handleCreateStore = async (data: any) => {
+    const downloadUrl = await uploadImage(data.avatar.uri);
+    const { avatar, ...newData } = {
+      ...data,
+      description: data.description ?? "",
+    };
+    const storeData = downloadUrl
+      ? { ...newData, avatarUrl: downloadUrl }
+      : newData;
     createStoreUser.mutate(
       {
         userId: user.id,
-        store: { ...data, description: data.description ?? "" },
+        store: storeData,
       },
       {
         onSuccess: async () => {
@@ -143,124 +155,167 @@ export default function Page() {
               });
           },
         },
-      ]);
+      ]
+    );
+  };
+
+  // Function to pick an image from the gallery
+  const handleChangeAvatar = async () => {
+    // Request media library permissions
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      alert("Permission to access media library is required!");
+      return;
     }
 
-    useEffect(() => {
-      console.log("reset");
-      reset({
-        name: user.store?.name,
-        description: user.store?.description,
-        type: user.store?.type,
-        address: user.store?.address,
-      });
-    }, [reset]);
-    // Sample data
-    const renderProduct = ({ item }: {item: any}) => (
-      <Card style={styles.card} elevation={3}>
-        {/* Conditional rendering for image */}
-        {item.imageUrl ? (
-          <Card.Cover
-            source={{ uri: item.imageUrl }}
-            style={styles.cardImage}
+    // Open the image picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setAvatarUri(result.assets[0].uri); // Set the selected image URI
+      setValue("avatar", result.assets[0], {
+        shouldDirty: true,
+        shouldValidate: true,
+      }); // Set file data to React Hook Form
+    }
+  };
+
+  const uploadImage = async (avatarUrl: string) => {
+    if (!avatarUrl) return null;
+
+    const filename = avatarUrl.substring(avatarUrl.lastIndexOf("/") + 1);
+    const storageRef = storage().ref(`avatars/${filename}`);
+
+    try {
+      await storageRef.putFile(avatarUrl);
+      const downloadURL = await storageRef.getDownloadURL();
+      return downloadURL;
+    } catch (error) {
+      console.error("Failed to upload image:", error);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    console.log("reset", user.store?.avatarUrl);
+    reset({
+      name: user.store?.name,
+      description: user.store?.description,
+      type: user.store?.type,
+      address: user.store?.address,
+      avatar: { uri: user.store?.avatarUrl },
+    });
+  }, [reset]);
+  // Sample data
+  const renderProduct = ({ item }: { item: any }) => (
+    <Card style={styles.card} elevation={3}>
+      {/* Conditional rendering for image */}
+      {item.imageUrl ? (
+        <Card.Cover source={{ uri: item.imageUrl }} style={styles.cardImage} />
+      ) : (
+        <View style={styles.placeholderContainer}>
+          <Avatar.Icon
+            size={64}
+            icon="image-off"
+            style={styles.placeholderImage}
           />
-        ) : (
-          <View style={styles.placeholderContainer}>
-            <Avatar.Icon
-              size={64}
-              icon="image-off"
-              style={styles.placeholderImage}
-            />
+        </View>
+      )}
+
+      <Card.Content style={styles.cardContent}>
+        <Title style={styles.title}>{item.name}</Title>
+        {/* <Paragraph style={styles.description}>{item.description}</Paragraph> */}
+        <Paragraph style={styles.price}>P {item.price}</Paragraph>
+      </Card.Content>
+
+      <Card.Actions style={styles.cardActions}>
+        <Button
+          mode="outlined"
+          onPress={() => console.log("Edit Product", item.id)}
+          style={styles.editButton}
+        >
+          Edit
+        </Button>
+        <Button mode="contained" onPress={() => handleDeleteProduct(item.id)}>
+          Delete
+        </Button>
+      </Card.Actions>
+    </Card>
+  );
+  return (
+    <GestureHandlerRootView style={[styles.container]}>
+      <View>
+        {/* Store Avatar and Name */}
+        {!user?.store?.name && (
+          <View style={styles.header}>
+            <Avatar.Text size={60} label="T" />
+            <Text variant="headlineMedium" style={styles.storeName}>
+              You Don’t Have a Store
+            </Text>
+            <View style={styles.buttonContainer}>
+              <Button mode="outlined" onPress={handleSnapPress}>
+                Add Store
+              </Button>
+            </View>
           </View>
         )}
 
-        <Card.Content style={styles.cardContent}>
-          <Title style={styles.title}>{item.name}</Title>
-          {/* <Paragraph style={styles.description}>{item.description}</Paragraph> */}
-          <Paragraph style={styles.price}>P {item.price}</Paragraph>
-        </Card.Content>
-
-        <Card.Actions style={styles.cardActions}>
-          <Button
-            mode="outlined"
-            onPress={() => console.log("Edit Product", item.id)}
-            style={styles.editButton}
-          >
-            Edit
-          </Button>
-          <Button mode="contained" onPress={() => handleDeleteProduct(item.id)}>
-            Delete
-          </Button>
-        </Card.Actions>
-      </Card>
-    );
-    return (
-      <GestureHandlerRootView style={[styles.container]}>
-        <View>
-          {/* Store Avatar and Name */}
-          {!user?.store?.name && (
+        {/* Edit and View Store Buttons */}
+        {user?.store?.name && (
+          <>
             <View style={styles.header}>
-              <Avatar.Text size={60} label="T" />
+              {user.store?.avatarUrl ? <Avatar.Image size={60} source={{uri: user.store?.avatarUrl}} />:
+              <Avatar.Text size={60} label="T" /> }
               <Text variant="headlineMedium" style={styles.storeName}>
-                You Don’t Have a Store
+                {user?.store?.name}
               </Text>
-              <View style={styles.buttonContainer}>
-                <Button mode="outlined" onPress={handleSnapPress}>
-                  Add Store
-                </Button>
-              </View>
             </View>
-          )}
-
-          {/* Edit and View Store Buttons */}
-          {user?.store?.name && (
-            <>
-              <View style={styles.header}>
-                <Avatar.Text size={60} label="T" />
-                <Text variant="headlineMedium" style={styles.storeName}>
-                  {user?.store?.name}
-                </Text>
-              </View>
-              <View style={styles.buttonContainer}>
-                <Button mode="outlined" onPress={handleSnapPress}>
-                  Edit Store
-                </Button>
-                {/* <Button
+            <View style={styles.buttonContainer}>
+              <Button mode="outlined" onPress={handleSnapPress}>
+                Edit Store
+              </Button>
+              {/* <Button
                 mode="contained"
                 onPress={() => console.log("View Store")}
               >
                 View Store
               </Button> */}
-              </View>
-              <Divider style={styles.divider} />
+            </View>
+            <Divider style={styles.divider} />
 
-              <View style={styles.placeholderContainer}>
-                <Button
-                  mode="outlined"
-                  onPress={() => router.push("/store/product")}
-                >
-                  Add Product
-                </Button>
-                <Text variant="titleMedium" style={styles.noProductText}>
-                  {products ? "Products" : "You don't have any products"}
-                </Text>
-              </View>
-              <FlatList
-                data={products}
-                keyExtractor={(item) => item.id}
-                renderItem={renderProduct}
-                horizontal // Enables horizontal scrolling
-                showsHorizontalScrollIndicator={false} // Hides the horizontal scrollbar
-                contentContainerStyle={styles.listContent}
-              />
-            </>
-          )}
-        </View>
-        {/* <Text variant="bodyLarge" style={styles.message}>
+            <View style={styles.placeholderContainer}>
+              <Button
+                mode="outlined"
+                onPress={() => router.push("/store/product")}
+              >
+                Add Product
+              </Button>
+              <Text variant="titleMedium" style={styles.noProductText}>
+                {products ? "Products" : "You don't have any products"}
+              </Text>
+            </View>
+            <FlatList
+              data={products}
+              keyExtractor={(item) => item.id}
+              renderItem={renderProduct}
+              horizontal // Enables horizontal scrolling
+              showsHorizontalScrollIndicator={false} // Hides the horizontal scrollbar
+              contentContainerStyle={styles.listContent}
+            />
+          </>
+        )}
+      </View>
+      {/* <Text variant="bodyLarge" style={styles.message}>
         {user?.store?.name ?? "You Don’t Have a Store"}
       </Text> */}
 
-        {/* <Button mode="contained" onPress={handleSnapPress} style={styles.button}>
+      {/* <Button mode="contained" onPress={handleSnapPress} style={styles.button}>
       {user?.store ? "Edit " : " Store" } Store
       </Button>
 
@@ -268,191 +323,222 @@ export default function Page() {
         Add Product
       </Button> */}
 
-        <BottomSheet
-          ref={sheetRef}
-          index={-1}
-          snapPoints={snapPoints}
-          enableDynamicSizing={false}
-          enablePanDownToClose={true}
+      <BottomSheet
+        ref={sheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enableDynamicSizing={false}
+        enablePanDownToClose={true}
+      >
+        <BottomSheetView
+          style={[
+            styles.bottomSheetView,
+            { backgroundColor: theme.colors.surface },
+          ]}
         >
-          <BottomSheetView
-            style={[
-              styles.bottomSheetView,
-              { backgroundColor: theme.colors.surface },
-            ]}
-          >
-            <View style={{ justifyContent: "center" }}>
-              <FVInput
-                control={control}
-                name="name"
-                errors={errors}
-                props={{
-                  placeholder: "Store Name",
-                  mode: "outlined",
-                  style: styles.input,
-                }}
-              />
-              <FVInput
-                control={control}
-                name="description"
-                errors={errors}
-                props={{
-                  placeholder: "Description",
-                  mode: "outlined",
-                  style: styles.input,
-                }}
-              />
-              <FVInput
-                control={control}
-                name="address"
-                errors={errors}
-                props={{
-                  placeholder: "Address",
-                  mode: "outlined",
-                  style: styles.input,
-                }}
-              />
+          {/* <View style={{ alignItems: "center", marginBottom: 16 }}>
+            {avatarUri ? <Avatar.Image
+              size={80}
+              source={{ uri: avatarUri }} // Replace with your default avatar path
+            /> : <Avatar.Text size={80} label="T" />}
+            <Button onPress={handleChangeAvatar}>Change Avatar</Button>
+          </View> */}
 
-              <FVInput
-                control={control}
-                name="type"
-                errors={errors}
-                props={{
-                  placeholder: "Store Type",
-                  mode: "outlined",
-                  style: styles.input,
-                }}
-              />
-              <Button
-                mode="contained"
-                disabled={!isDirty || !isValid}
-                onPress={handleSubmit(handleCreateStore)}
-              >
-                {user?.store ? "Edit " : "Create "} Store
-              </Button>
-            </View>
-          </BottomSheetView>
-        </BottomSheet>
-      </GestureHandlerRootView>
-    );
-  };
+          <Controller
+            control={control}
+            name="avatar"
+            rules={{ required: "Avatar is required" }}
+            render={({ field: { onChange } }) => (
+              <View style={{ alignItems: "center", marginBottom: 16 }}>
+                {avatarUri ? (
+                  <>
+                    <Avatar.Image size={80} source={{ uri: avatarUri }} />
+                  </>
+                ) : (
+                  <Avatar.Text size={80} label="T" />
+                )}
+                <Button onPress={handleChangeAvatar}>Change Avatar</Button>
+              </View>
+            )}
+          />
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      // backgroundColor: '#eaf2d7', // Light green background
-      padding: 20,
-    },
-    bottomSheetView: {
-      flex: 1,
-      padding: 20,
-    },
-    header: {
-      alignItems: "center",
-      marginBottom: 20,
-    },
-    message: {
-      textAlign: "center",
-      marginVertical: 20,
-    },
-    // avatar: {
-    //   backgroundColor: '#2f4f4f', // Dark green color
-    // },
-    storeName: {
-      fontWeight: "bold",
-      marginTop: 10,
-      color: "#2f4f4f", // Dark green color
-    },
-    buttonContainer: {
-      flexDirection: "row",
-      justifyContent: "space-around",
-      marginVertical: 15,
-    },
-    // viewStoreButton: {
-    //   backgroundColor: '#2f4f4f', // Dark green color
-    // },
-    removeStoreText: {
-      textAlign: "center",
-      // color: '#a9a9a9', // Light gray color
-      marginVertical: 10,
-    },
-    divider: {
-      // backgroundColor: '#dcdcdc',
-      marginVertical: 20,
-    },
-    placeholderContainer: {
-      alignItems: "center",
-      marginTop: 30,
-    },
-    noProductText: {
-      // color: '#2f4f4f', // Dark green color
-      marginVertical: 10,
-    },
-    input: {
-      marginBottom: 15,
-    },
+          {errors && errors.avatar && (
+            <HelperText type="error">
+              {errors.avatar?.message as string}
+            </HelperText>
+          )}
+          <View style={{ justifyContent: "center" }}>
+            <FVInput
+              control={control}
+              name="name"
+              errors={errors}
+              props={{
+                placeholder: "Store Name",
+                mode: "outlined",
+                style: styles.input,
+              }}
+            />
+            <FVInput
+              control={control}
+              name="description"
+              errors={errors}
+              props={{
+                placeholder: "Description",
+                mode: "outlined",
+                style: styles.input,
+              }}
+            />
+            <FVInput
+              control={control}
+              name="address"
+              errors={errors}
+              props={{
+                placeholder: "Address",
+                mode: "outlined",
+                style: styles.input,
+              }}
+            />
 
-    // addProductButton: {
-    //   borderColor: '#2f4f4f', // Dark green color for the outline
-    // },
-    listContent: {
-      paddingVertical: 10,
-    },
-    card: {
-      width: 260, // Set a consistent width for each card
-      marginVertical: 10,
-      marginRight: 15, // Space between cards
-      borderRadius: 20, // Rounded corners
-      backgroundColor: "#eaf2d7", // Light green background color
-      overflow: "hidden",
-      alignSelf: 'center',      // Center the card itself
-    },
-    cardImage: {
-      // height: 120,
-      borderRadius: 20, // Rounded corners
-      // borderTopLeftRadius: 20,
-      // borderTopRightRadius: 20,
-    },
-    placeholderImageContainer: {
-      // height: 120,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "#d3d3d3",
-      // borderTopLeftRadius: 20,
-      // borderTopRightRadius: 20,
-    },
-    placeholderImage: {
-      backgroundColor: "transparent",
-    },
-    cardContent: {
-      // paddingHorizontal: 16,
-      // paddingVertical: 10,
-      alignItems: "center", // Center align content horizontally
-    },
-    title: {
-      fontSize: 18,
-      fontWeight: "bold",
-      // color: '#2f4f4f', // Dark green color
-    },
-    description: {
-      fontSize: 14,
-      color: "#666",
-      marginTop: 5,
-    },
-    price: {
-      fontSize: 16,
-      color: "#2f4f4f",
-      fontWeight: "bold",
-      marginTop: 10,
-    },
-    cardActions: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingHorizontal: 16,
-      paddingBottom: 10,
-    },
-    editButton: {
-      borderColor: "#2f4f4f",
-    },
-  }); 
+            <FVInput
+              control={control}
+              name="type"
+              errors={errors}
+              props={{
+                placeholder: "Store Type",
+                mode: "outlined",
+                style: styles.input,
+              }}
+            />
+            <Button
+              mode="contained"
+              disabled={!isDirty || !isValid}
+              onPress={handleSubmit(handleCreateStore)}
+            >
+              {user?.store ? "Edit " : "Create "} Store
+            </Button>
+          </View>
+        </BottomSheetView>
+      </BottomSheet>
+    </GestureHandlerRootView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    // backgroundColor: '#eaf2d7', // Light green background
+    padding: 20,
+  },
+  bottomSheetView: {
+    flex: 1,
+    padding: 20,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  message: {
+    textAlign: "center",
+    marginVertical: 20,
+  },
+  // avatar: {
+  //   backgroundColor: '#2f4f4f', // Dark green color
+  // },
+  storeName: {
+    fontWeight: "bold",
+    marginTop: 10,
+    color: "#2f4f4f", // Dark green color
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginVertical: 15,
+  },
+  // viewStoreButton: {
+  //   backgroundColor: '#2f4f4f', // Dark green color
+  // },
+  removeStoreText: {
+    textAlign: "center",
+    // color: '#a9a9a9', // Light gray color
+    marginVertical: 10,
+  },
+  divider: {
+    // backgroundColor: '#dcdcdc',
+    marginVertical: 20,
+  },
+  placeholderContainer: {
+    alignItems: "center",
+    marginTop: 30,
+  },
+  noProductText: {
+    // color: '#2f4f4f', // Dark green color
+    marginVertical: 10,
+  },
+  input: {
+    marginBottom: 15,
+  },
+
+  // addProductButton: {
+  //   borderColor: '#2f4f4f', // Dark green color for the outline
+  // },
+  listContent: {
+    paddingVertical: 10,
+  },
+  card: {
+    width: 260, // Set a consistent width for each card
+    marginVertical: 10,
+    marginRight: 15, // Space between cards
+    borderRadius: 20, // Rounded corners
+    backgroundColor: "#eaf2d7", // Light green background color
+    overflow: "hidden",
+    alignSelf: "center", // Center the card itself
+  },
+  cardImage: {
+    // height: 120,
+    borderRadius: 20, // Rounded corners
+    // borderTopLeftRadius: 20,
+    // borderTopRightRadius: 20,
+  },
+  placeholderImageContainer: {
+    // height: 120,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#d3d3d3",
+    // borderTopLeftRadius: 20,
+    // borderTopRightRadius: 20,
+  },
+  placeholderImage: {
+    backgroundColor: "transparent",
+  },
+  cardContent: {
+    // paddingHorizontal: 16,
+    // paddingVertical: 10,
+    alignItems: "center", // Center align content horizontally
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+    // color: '#2f4f4f', // Dark green color
+  },
+  description: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 5,
+  },
+  price: {
+    fontSize: 16,
+    color: "#2f4f4f",
+    fontWeight: "bold",
+    marginTop: 10,
+  },
+  cardActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  editButton: {
+    borderColor: "#2f4f4f",
+  },
+});

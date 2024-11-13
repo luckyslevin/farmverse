@@ -1,5 +1,4 @@
 import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
-import firestore from "@react-native-firebase/firestore";
 import { useRouter, Stack, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, useTheme } from "react-native-paper";

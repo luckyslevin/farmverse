@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, ActivityIndicator, StyleSheet, Image } from 'react-native';
-import { Button, TextInput, Card } from 'react-native-paper';
+import { Button, TextInput } from 'react-native-paper';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
 import * as ImagePicker from 'expo-image-picker';

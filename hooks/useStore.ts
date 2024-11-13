@@ -7,6 +7,7 @@ export const schema = z.object({
   description: z.string().optional(),
   type: z.string().min(1),
   address: z.string().min(1),
+  avatar: z.any().optional(),
   createdAt: z.date().optional()
 });
 

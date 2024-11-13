@@ -2,7 +2,6 @@ import Header from "@/components/Header";
 import { Stack } from "expo-router";
 import { memo } from "react";
 import { useTheme } from "react-native-paper";
-import auth from "@react-native-firebase/auth";
 
 export const unstable_settings = {
   // Ensure any route can link back to `/`
