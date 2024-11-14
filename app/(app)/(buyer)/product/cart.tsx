@@ -1,6 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { ScrollView, View, StyleSheet, Image, ActivityIndicator } from "react-native";
-import { Checkbox, Card, Text, IconButton, Button, Divider } from "react-native-paper";
+import {
+  ScrollView,
+  View,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
+} from "react-native";
+import {
+  Checkbox,
+  Card,
+  Text,
+  IconButton,
+  Button,
+  Divider,
+} from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/user";
@@ -29,25 +42,27 @@ export default function CartPage() {
             const cartItemData = doc.data();
             const productDoc = await cartItemData.productRef.get();
             const product = productDoc.data();
+            if (product != undefined) {
+              console.log("product", product);
+              const storeDoc = await product.userRef.get();
+              const storeData = storeDoc.data();
 
-            const storeDoc = await product.userRef.get();
-            const storeData = storeDoc.data();
+              const storeName = storeData.store.name;
+              // Group items by store
+              if (!fetchedCartData[storeName]) {
+                fetchedCartData[storeName] = {
+                  store: storeData,
+                  items: [],
+                };
+              }
 
-            const storeName = storeData.store.name;
-            // Group items by store
-            if (!fetchedCartData[storeName]) {
-              fetchedCartData[storeName] = {
-                store: storeData,
-                items: []
-              };
+              fetchedCartData[storeName].items.push({
+                id: doc.id,
+                quantity: cartItemData.quantity,
+                product,
+                user: storeData,
+              });
             }
-
-            fetchedCartData[storeName].items.push({
-              id: doc.id,
-              quantity: cartItemData.quantity,
-              product,
-              user: storeData,
-            });
           })
         );
 
@@ -64,10 +79,14 @@ export default function CartPage() {
 
   const handleQuantityChange = async (storeName, itemId, increment) => {
     const updatedCartData = [...cartData];
-    const storeIndex = updatedCartData.findIndex((cart) => cart.store.store?.name === storeName);
+    const storeIndex = updatedCartData.findIndex(
+      (cart) => cart.store.store?.name === storeName
+    );
     if (storeIndex === -1) return;
 
-    const itemIndex = updatedCartData[storeIndex].items.findIndex((item) => item.id === itemId);
+    const itemIndex = updatedCartData[storeIndex].items.findIndex(
+      (item) => item.id === itemId
+    );
     if (itemIndex === -1) return;
 
     const item = updatedCartData[storeIndex].items[itemIndex];
@@ -121,19 +140,23 @@ export default function CartPage() {
 
       if (isSelected) {
         updatedSelectedStores[storeName] = true;
-        cartData.find((storeGroup) => storeGroup.store.store.name === storeName).items.forEach((item) => {
-          setSelectedItems((prevSelectedItems) => ({
-            ...prevSelectedItems,
-            [`${storeName}-${item.id}`]: true,
-          }));
-        });
+        cartData
+          .find((storeGroup) => storeGroup.store.store.name === storeName)
+          .items.forEach((item) => {
+            setSelectedItems((prevSelectedItems) => ({
+              ...prevSelectedItems,
+              [`${storeName}-${item.id}`]: true,
+            }));
+          });
       } else {
         delete updatedSelectedStores[storeName];
         setSelectedItems((prevSelectedItems) => {
           const updatedSelectedItems = { ...prevSelectedItems };
-          cartData.find((storeGroup) => storeGroup.store.store.name === storeName).items.forEach((item) => {
-            delete updatedSelectedItems[`${storeName}-${item.id}`];
-          });
+          cartData
+            .find((storeGroup) => storeGroup.store.store.name === storeName)
+            .items.forEach((item) => {
+              delete updatedSelectedItems[`${storeName}-${item.id}`];
+            });
           return updatedSelectedItems;
         });
       }
@@ -145,7 +168,10 @@ export default function CartPage() {
   const handleSelectAllToggle = () => {
     const allSelected =
       Object.keys(selectedItems).length ===
-      cartData.reduce((count, storeGroup) => count + storeGroup.items.length, 0);
+      cartData.reduce(
+        (count, storeGroup) => count + storeGroup.items.length,
+        0
+      );
 
     if (allSelected) {
       setSelectedStores({});
@@ -168,15 +194,27 @@ export default function CartPage() {
 
   const calculateTotal = () => {
     return cartData.reduce((total, storeGroup) => {
-      return total + storeGroup.items.reduce((storeTotal, item) => {
-        const key = `${storeGroup.store.store.name}-${item.id}`;
-        return storeTotal + (selectedItems[key] ? item.product.price * item.quantity : 0);
-      }, 0);
+      return (
+        total +
+        storeGroup.items.reduce((storeTotal, item) => {
+          const key = `${storeGroup.store.store.name}-${item.id}`;
+          return (
+            storeTotal +
+            (selectedItems[key] ? item.product.price * item.quantity : 0)
+          );
+        }, 0)
+      );
     }, 0);
   };
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" style={{ flex: 1, justifyContent: "center" }} />;
+    return (
+      <ActivityIndicator
+        size="large"
+        color="#0000ff"
+        style={{ flex: 1, justifyContent: "center" }}
+      />
+    );
   }
 
   return (
@@ -187,36 +225,68 @@ export default function CartPage() {
         <View key={storeGroup.store.store.name}>
           <View style={styles.storeHeader}>
             <Checkbox
-              status={selectedStores[storeGroup.store.store.name] ? 'checked' : 'unchecked'}
-              onPress={() => handleStoreCheckboxToggle(storeGroup.store.store.name)}
+              status={
+                selectedStores[storeGroup.store.store.name]
+                  ? "checked"
+                  : "unchecked"
+              }
+              onPress={() =>
+                handleStoreCheckboxToggle(storeGroup.store.store.name)
+              }
             />
-            <Text style={styles.storeName}>{storeGroup?.store?.store?.name ?? 'N/A'}</Text>
+            <Text style={styles.storeName}>
+              {storeGroup?.store?.store?.name ?? "N/A"}
+            </Text>
           </View>
           <Divider />
           {storeGroup.items.map((item) => (
             <Card key={item.id} style={styles.cartItem}>
               <View style={styles.itemHeader}>
                 <Checkbox
-                  status={selectedItems[`${storeGroup.store.store.name}-${item.id}`] ? 'checked' : 'unchecked'}
-                  onPress={() => handleItemCheckboxToggle(storeGroup.store.store.name, item.id)}
+                  status={
+                    selectedItems[`${storeGroup.store.store.name}-${item.id}`]
+                      ? "checked"
+                      : "unchecked"
+                  }
+                  onPress={() =>
+                    handleItemCheckboxToggle(
+                      storeGroup.store.store.name,
+                      item.id
+                    )
+                  }
                 />
                 <Text style={styles.itemName}>{item.product.name}</Text>
                 <IconButton icon="dots-vertical" />
               </View>
               <View style={styles.itemDetails}>
-                <Image source={{ uri: item.product.imageUrl }} style={styles.image} />
+                <Image
+                  source={{ uri: item.product.imageUrl }}
+                  style={styles.image}
+                />
                 <View style={styles.infoContainer}>
                   <Text style={styles.itemPrice}>₱{item.product.price}</Text>
                   <View style={styles.quantityContainer}>
                     <IconButton
                       icon="minus"
-                      onPress={() => handleQuantityChange(storeGroup.store.store.name, item.id, -1)}
+                      onPress={() =>
+                        handleQuantityChange(
+                          storeGroup.store.store.name,
+                          item.id,
+                          -1
+                        )
+                      }
                       style={styles.quantityButton}
                     />
                     <Text style={styles.quantityText}>{item.quantity}</Text>
                     <IconButton
                       icon="plus"
-                      onPress={() => handleQuantityChange(storeGroup.store.store.name, item.id, 1)}
+                      onPress={() =>
+                        handleQuantityChange(
+                          storeGroup.store.store.name,
+                          item.id,
+                          1
+                        )
+                      }
                       style={styles.quantityButton}
                     />
                   </View>
@@ -231,7 +301,10 @@ export default function CartPage() {
         <Checkbox
           status={
             Object.keys(selectedItems).length ===
-            cartData.reduce((count, storeGroup) => count + storeGroup.items.length, 0)
+            cartData.reduce(
+              (count, storeGroup) => count + storeGroup.items.length,
+              0
+            )
               ? "checked"
               : "unchecked"
           }
@@ -253,19 +326,19 @@ const styles = StyleSheet.create({
   },
   header: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginVertical: 10,
-    textAlign: 'center',
+    textAlign: "center",
   },
   storeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 10,
     paddingHorizontal: 10,
   },
   storeName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 8,
   },
   cartItem: {
@@ -274,18 +347,18 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   itemHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   itemName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     flex: 1,
   },
   itemDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 10,
   },
   image: {
@@ -302,17 +375,17 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   quantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   quantityText: {
     fontSize: 16,
     paddingHorizontal: 10,
   },
   footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 20,
     paddingHorizontal: 10,
     borderRadius: 8,
