@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, FlatList } from "react-native";
-import { Button, Card, Text, useTheme } from "react-native-paper";
+import { Avatar, Button, Card, Text, useTheme } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
 import { useRouter } from "expo-router";
 import { useAtomValue } from "jotai";
@@ -78,11 +78,18 @@ export default function FarmersList() {
     <Card style={styles.card} mode="contained">
       <Card.Content>
         <View style={styles.header}>
-          {/* <Avatar.Image size={60} source={{ uri: item.image }} /> */}
+        {item.store?.avatarUrl ? (
+            <Avatar.Image
+              size={40}
+              source={{ uri: item.store.avatarUrl }}
+            />
+          ) : (
+            <Avatar.Text size={40} label={item?.store?.name.charAt(0)} />
+          )}
           <View style={styles.headerText}>
             <Text style={styles.type}>{item?.store?.name}</Text>
           </View>
-          <Button mode="outlined" onPress={() => handleChatNow(item)}>
+          <Button mode="contained" onPress={() => handleChatNow(item)}>
             Chat now
           </Button>
         </View>

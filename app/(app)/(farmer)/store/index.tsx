@@ -237,7 +237,12 @@ export default function Page() {
       <Card.Actions style={styles.cardActions}>
         <Button
           mode="outlined"
-          onPress={() => console.log("Edit Product", item.id)}
+          onPress={() =>
+            router.push({
+              pathname: "/store/editProduct",
+              params: { productId: item.id },
+            })
+          }
           style={styles.editButton}
         >
           Edit
@@ -270,8 +275,14 @@ export default function Page() {
         {user?.store?.name && (
           <>
             <View style={styles.header}>
-              {user.store?.avatarUrl ? <Avatar.Image size={60} source={{uri: user.store?.avatarUrl}} />:
-              <Avatar.Text size={60} label="T" /> }
+              {user.store?.avatarUrl ? (
+                <Avatar.Image
+                  size={60}
+                  source={{ uri: user.store?.avatarUrl }}
+                />
+              ) : (
+                <Avatar.Text size={60} label="T" />
+              )}
               <Text variant="headlineMedium" style={styles.storeName}>
                 {user?.store?.name}
               </Text>
