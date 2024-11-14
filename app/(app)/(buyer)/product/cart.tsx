@@ -17,6 +17,8 @@ import {
 import firestore from "@react-native-firebase/firestore";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/user";
+import { Stack } from "expo-router";
+import Header from "@/components/Header";
 
 export default function CartPage() {
   const [cartData, setCartData] = useState([]);
@@ -218,9 +220,9 @@ export default function CartPage() {
   }
 
   return (
+    <>
+    <Stack.Screen options={{title: "My Cart", headerRight: () => (<Header/>)}}/>
     <ScrollView style={styles.container}>
-      <Text style={styles.header}>My Cart</Text>
-
       {cartData.map((storeGroup) => (
         <View key={storeGroup.store.store.name}>
           <View style={styles.storeHeader}>
@@ -316,6 +318,7 @@ export default function CartPage() {
         </Button>
       </View>
     </ScrollView>
+    </>
   );
 }
 
