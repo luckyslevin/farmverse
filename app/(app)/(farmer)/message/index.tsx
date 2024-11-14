@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View, Text } from 'react-native';
-import { List, Divider } from 'react-native-paper';
+import { List, Divider, Avatar } from 'react-native-paper';
 import firestore from '@react-native-firebase/firestore';
 import { useRouter } from 'expo-router';
 import { userAtom } from '@/stores/user';
@@ -21,7 +21,6 @@ export default function ConversationList() {
         .orderBy('updatedAt', 'desc')
         .onSnapshot(async (snapshot) => {
           if (!snapshot.empty) {
-            console.log("farmerrrrr")
             const fetchedConversations = await Promise.all(
               snapshot.docs.map(async (doc) => {
                 const conversationData = doc.data();
@@ -36,7 +35,7 @@ export default function ConversationList() {
 
                   const user = userDoc.exists
                   ? userDoc.data()
-                  : 'Unknown Store';
+                  : { firstName: 'Unknown User' };
 
                 return {
                   id: doc.id,
@@ -69,6 +68,16 @@ export default function ConversationList() {
         description={item.lastMessage.text}
         descriptionNumberOfLines={1}
         right={() => <Text>{item.lastMessage?.timestamp?.toDate()?.toLocaleString()}</Text>}
+        left={() =>
+          item.user?.avatarUrl ? (
+            <Avatar.Image
+              size={40}
+              source={{ uri: item.user?.avatarUrl }}
+            />
+          ) : (
+            <Avatar.Text size={40} label={item.user?.firstName?.charAt(0)} />
+          )
+        }
         onPress={() =>
           router.push({
             pathname: '/(app)/(farmer)/message/[conversationId]',

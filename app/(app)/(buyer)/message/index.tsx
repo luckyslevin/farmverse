@@ -36,7 +36,7 @@ export default function ConversationList() {
 
                   const user = userDoc.exists
                     ? userDoc.data()
-                    : "Unknown Store";
+                    : {store: "Unknown Store"};
 
                   return {
                     id: doc.id,
@@ -80,7 +80,7 @@ export default function ConversationList() {
               source={{ uri: item.user.store.avatarUrl }}
             />
           ) : (
-            <Avatar.Text size={40} label="t" />
+            <Avatar.Text size={40} label={item.user?.store?.name.charAt(0)} />
           )
         }
         onPress={() =>

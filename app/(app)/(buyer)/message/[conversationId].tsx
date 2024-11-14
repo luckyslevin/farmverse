@@ -43,15 +43,15 @@ const Page = () => {
       .collection("messages")
       .where("conversationId", "==", conversationId) // Replace with actual conversation ID
       .orderBy("timestamp", "desc")
-      .onSnapshot((snapshot) => {
+      .onSnapshot(async (snapshot) => {
+        const users = await firestore().collection("users").doc(userId).get();
         if (snapshot != null) {
           const loadedMessages = snapshot?.docs.map((doc) => {
-            console.log(doc.data())
             return {
             _id: doc.id,
             text: doc.data().text,
             createdAt: doc.data()?.timestamp?.toDate(),
-            user: { _id: doc.data().senderId, name: doc.data().senderName },
+            user: { _id: doc.data().senderId, name: doc.data().senderName, avatar: doc.data().senderId == userId ?  users.data().store.avatarUrl: currentUser?.avatarUrl },
           }}
         );
           setMessages(loadedMessages);
@@ -103,6 +103,7 @@ const Page = () => {
         user={{
           _id: currentUser?.id,
           name: currentUser?.firstName,
+          avatar: currentUser?.avatarUrl,
         }}
       />
     </>
