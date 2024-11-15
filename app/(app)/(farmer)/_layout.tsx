@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { useTheme, IconButton } from "react-native-paper";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import auth from "@react-native-firebase/auth";
 
 export default function Layout() {
@@ -32,12 +32,47 @@ export default function Layout() {
             )}
             onPress={onLogout}
           />
-        )
+        ),
       }}
     >
-      <Tabs.Screen name="home" options={{ title: "Home" }} />
-      <Tabs.Screen name="store" options={{ headerShown: false, title: "My Store" }} />
-      <Tabs.Screen name="message" options={{ headerShown: false, title: "Message" }} />
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: "Products",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="home" color={color} size={size} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="store"
+        options={{
+          title: "Store",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="storefront"
+              color={color}
+              size={size}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="message"
+        options={{
+          headerShown: false,
+          title: "Message",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="message-text"
+              color={color}
+              size={size}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
