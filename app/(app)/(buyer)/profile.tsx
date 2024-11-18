@@ -261,9 +261,9 @@ export default function ProfilePage() {
             <Button mode="contained" style={styles.editButton} onPress={() => setEditing(true)}>
               Edit Profile
             </Button>
-            <Button mode="text" style={styles.deleteButton} onPress={handleDeleteAccount}>
+            {/* <Button mode="text" style={styles.deleteButton} onPress={handleDeleteAccount}>
               Delete my Account
-            </Button>
+            </Button> */}
           </>
         )}
       </View>

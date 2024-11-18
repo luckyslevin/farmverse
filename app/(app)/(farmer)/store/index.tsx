@@ -203,7 +203,6 @@ export default function Page() {
   };
 
   useEffect(() => {
-    console.log("reset", user.store?.avatarUrl);
     reset({
       name: user.store?.name,
       description: user.store?.description,
@@ -281,7 +280,7 @@ export default function Page() {
                   source={{ uri: user.store?.avatarUrl }}
                 />
               ) : (
-                <Avatar.Text size={60} label="T" />
+                <Avatar.Text size={60} label={user?.store.name?.charAt(0)} />
               )}
               <Text variant="headlineMedium" style={styles.storeName}>
                 {user?.store?.name}
