@@ -231,6 +231,7 @@ export default function Page() {
         <Title style={styles.title}>{item.name}</Title>
         {/* <Paragraph style={styles.description}>{item.description}</Paragraph> */}
         <Paragraph style={styles.price}>P {item.price}</Paragraph>
+        <Paragraph style={styles.price}>Qty {item.quantity}</Paragraph>
       </Card.Content>
 
       <Card.Actions style={styles.cardActions}>

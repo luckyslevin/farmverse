@@ -150,9 +150,9 @@ export default function CheckoutPage() {
         }));
 
         const orderData = {
-          userId: currentUser.id,
+          userRef: firestore().collection("users").doc(currentUser.id),
           storeName: storeGroup.storeName,
-          userRef: storeGroup.userRef, // Include userRef for the store
+          storeRef: storeGroup.userRef, // Include userRef for the store
           items: orderItems,
           totalAmount: orderItems.reduce(
             (total, item) => total + item.price * item.quantity,

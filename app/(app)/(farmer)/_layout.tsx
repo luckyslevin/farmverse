@@ -73,6 +73,20 @@ export default function Layout() {
           ),
         }}
       />
-    </Tabs>
+      <Tabs.Screen
+        name="orderHistory"
+        options={{
+          title: "Order History",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+            name="clipboard-list-outline" // Icon for order history
+
+              color={color}
+              size={size}
+            />
+          ),
+        }}
+      />
+    </Tabs>    
   );
 }
