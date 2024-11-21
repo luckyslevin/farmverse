@@ -146,13 +146,13 @@ export default function ProductDetailPage() {
         >
           Add to Cart
         </Button>
-        <Button
+        {/* <Button
           mode="contained"
           style={styles.buyNowButton}
           onPress={() => router.push("/product/cart")}
         >
           Buy Now
-        </Button>
+        </Button> */}
       </View>
 
       {/* Product Details */}

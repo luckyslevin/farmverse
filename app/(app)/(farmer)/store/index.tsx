@@ -203,7 +203,6 @@ export default function Page() {
   };
 
   useEffect(() => {
-    console.log("reset", user.store?.avatarUrl);
     reset({
       name: user.store?.name,
       description: user.store?.description,
@@ -232,6 +231,7 @@ export default function Page() {
         <Title style={styles.title}>{item.name}</Title>
         {/* <Paragraph style={styles.description}>{item.description}</Paragraph> */}
         <Paragraph style={styles.price}>P {item.price}</Paragraph>
+        <Paragraph style={styles.price}>Qty {item.quantity}</Paragraph>
       </Card.Content>
 
       <Card.Actions style={styles.cardActions}>
@@ -281,7 +281,7 @@ export default function Page() {
                   source={{ uri: user.store?.avatarUrl }}
                 />
               ) : (
-                <Avatar.Text size={60} label="T" />
+                <Avatar.Text size={60} label={user?.store.name?.charAt(0)} />
               )}
               <Text variant="headlineMedium" style={styles.storeName}>
                 {user?.store?.name}

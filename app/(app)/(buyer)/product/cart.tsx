@@ -17,7 +17,7 @@ import {
 import firestore from "@react-native-firebase/firestore";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/user";
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import Header from "@/components/Header";
 
 export default function CartPage() {
@@ -45,7 +45,6 @@ export default function CartPage() {
             const productDoc = await cartItemData.productRef.get();
             const product = productDoc.data();
             if (product != undefined) {
-              console.log("product", product);
               const storeDoc = await product.userRef.get();
               const storeData = storeDoc.data();
 
@@ -209,6 +208,26 @@ export default function CartPage() {
     }, 0);
   };
 
+  const handleCheckout = () => {
+    const selectedCart = cartData
+      .flatMap((storeGroup) =>
+        storeGroup.items
+          .filter((item) =>
+            selectedItems[`${storeGroup.store.store.name}-${item.id}`]
+          )
+          .map((item) => ({
+            storeName: storeGroup.store.store.name,
+            itemId: item.id,
+          }))
+      );
+  
+    router.push({
+      pathname: "/product/checkout",
+      params: { selectedCart: JSON.stringify(selectedCart) }, // Send only storeName and itemId
+    });
+  };
+  
+
   if (loading) {
     return (
       <ActivityIndicator
@@ -313,7 +332,7 @@ export default function CartPage() {
           onPress={handleSelectAllToggle}
         />
         <Text>Total: ₱{calculateTotal()}</Text>
-        <Button mode="contained" style={styles.checkoutButton}>
+        <Button mode="contained" style={styles.checkoutButton} onPress={handleCheckout}>
           Check Out
         </Button>
       </View>
