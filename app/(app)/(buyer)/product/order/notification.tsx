@@ -3,6 +3,8 @@ import { View, StyleSheet, ScrollView, Image, Text } from "react-native";
 import firestore from "@react-native-firebase/firestore";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/user";
+import { Stack } from "expo-router";
+import Header from "@/components/Header";
 
 export default function NotificationPage() {
   const [notifications, setNotifications] = useState([]);
@@ -17,7 +19,11 @@ export default function NotificationPage() {
         // Fetch orders from Firestore where the user is the customer
         const ordersSnapshot = await firestore()
           .collection("orders")
-          .where("userRef", "==", firestore().collection("users").doc(currentUser.id))
+          .where(
+            "userRef",
+            "==",
+            firestore().collection("users").doc(currentUser.id)
+          )
           .orderBy("createdAt", "asc")
           .get();
 
@@ -43,7 +49,8 @@ export default function NotificationPage() {
               orderId: order.orderId,
               storeName: order.storeName,
               status: latestHistory?.status || "No Status",
-              date: latestHistory?.date.toDate().toLocaleString() || "Unknown Date", // Convert Firestore timestamp to formatted string
+              date:
+                latestHistory?.date.toDate().toLocaleString() || "Unknown Date", // Convert Firestore timestamp to formatted string
               image: productImage, // First product image
             };
           })
@@ -69,29 +76,35 @@ export default function NotificationPage() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {notifications.map((notification, index) => (
-        <View key={index} style={styles.notificationCard}>
-          <Image
-            source={{
-              uri:
-                notification.image ||
-                "https://via.placeholder.com/50", // Placeholder if no image available
-            }}
-            style={styles.notificationImage}
-          />
-          <View style={styles.notificationContent}>
-            <Text style={styles.notificationTitle}>{notification.status}</Text>
-            <Text style={styles.notificationMessage}>
-              {notification.status === "Order Placed"
-                ? `Your order ${notification.id} is now pending with ${notification.storeName}.`
-                : `Your order ${notification.id} status updated to "${notification.status}".`}
-            </Text>
-            <Text style={styles.notificationDate}>{notification.date}</Text>
+    <>
+      <Stack.Screen
+        options={{ title: "Notifications", headerRight: () => <Header /> }}
+      />
+
+      <ScrollView style={styles.container}>
+        {notifications.map((notification, index) => (
+          <View key={index} style={styles.notificationCard}>
+            <Image
+              source={{
+                uri: notification.image || "https://via.placeholder.com/50", // Placeholder if no image available
+              }}
+              style={styles.notificationImage}
+            />
+            <View style={styles.notificationContent}>
+              <Text style={styles.notificationTitle}>
+                {notification.status}
+              </Text>
+              <Text style={styles.notificationMessage}>
+                {notification.status === "Order Placed"
+                  ? `Your order ${notification.id} is now pending with ${notification.storeName}.`
+                  : `Your order ${notification.id} status updated to "${notification.status}".`}
+              </Text>
+              <Text style={styles.notificationDate}>{notification.date}</Text>
+            </View>
           </View>
-        </View>
-      ))}
-    </ScrollView>
+        ))}
+      </ScrollView>
+    </>
   );
 }
 
