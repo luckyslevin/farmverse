@@ -136,10 +136,71 @@ export default function CheckoutPage() {
     }, 0);
   };
 
+  // const handlePlaceOrder = async () => {
+  //   try {
+  //     const ordersRef = firestore().collection("orders");
+  
+  //     for (const storeGroup of checkoutItems) {
+  //       const orderItems = storeGroup.items.map((item) => ({
+  //         name: item.name,
+  //         price: item.price,
+  //         quantity: item.quantity,
+  //         productId: item.itemId,
+  //         productRef: item.productRef,
+  //       }));
+  
+  //       // Create order data without history timestamp
+  //       const orderData = {
+  //         userRef: firestore().collection("users").doc(currentUser.id),
+  //         storeName: storeGroup.storeName,
+  //         storeRef: storeGroup.userRef, // Include userRef for the store
+  //         items: orderItems,
+  //         totalAmount: orderItems.reduce(
+  //           (total, item) => total + item.price * item.quantity,
+  //           0
+  //         ),
+  //         createdAt: firestore.FieldValue.serverTimestamp(), // Add the timestamp here
+  //         status: "Order Placed",
+  //         history: [], // Initialize as an empty array
+  //       };
+  
+  //       console.log("orderData", orderData);
+  
+  //       // Add the order to the collection and get its reference
+  //       const orderDocRef = await ordersRef.add(orderData);
+  
+  //       // Add the history entry with a separate update
+  //       await orderDocRef.update({
+  //         history: firestore.FieldValue.arrayUnion({
+  //           status: "Order Placed",
+  //           timestamp: firestore.FieldValue.serverTimestamp(),
+  //         }),
+  //       });
+  
+  //       console.log("Order successfully added with ID:", orderDocRef.id);
+  //     }
+  
+  //     // Clear the selected cart items after order placement
+  //     const parsedSelectedCart = JSON.parse(selectedCart || "[]");
+  //     for (const { itemId } of parsedSelectedCart) {
+  //       await firestore()
+  //         .collection("users")
+  //         .doc(currentUser.id)
+  //         .collection("carts")
+  //         .doc(itemId)
+  //         .delete();
+  //     }
+  
+  //     Alert.alert("Order Placed", "Your order has been placed successfully!");
+  //   } catch (error) {
+  //     console.error("Error placing order:", error);
+  //     Alert.alert("Error", "Failed to place your order. Please try again.");
+  //   }
+  // };
   const handlePlaceOrder = async () => {
     try {
       const ordersRef = firestore().collection("orders");
-
+  
       for (const storeGroup of checkoutItems) {
         const orderItems = storeGroup.items.map((item) => ({
           name: item.name,
@@ -148,25 +209,33 @@ export default function CheckoutPage() {
           productId: item.itemId,
           productRef: item.productRef,
         }));
-
-        const orderData = {
+  
+        // Step 1: Add the order without history
+        const orderDocRef = await ordersRef.add({
           userRef: firestore().collection("users").doc(currentUser.id),
           storeName: storeGroup.storeName,
-          storeRef: storeGroup.userRef, // Include userRef for the store
+          storeRef: storeGroup.userRef,
           items: orderItems,
           totalAmount: orderItems.reduce(
             (total, item) => total + item.price * item.quantity,
             0
           ),
-          createdAt: firestore.FieldValue.serverTimestamp(),
-          status: "Pending",
-        };
-        console.log("orderData", orderData);
-        console.log("orderItems", orderItems);
-        // Add to the orders collection
-        await ordersRef.add(orderData);
+          createdAt: firestore.FieldValue.serverTimestamp(), // Directly used in Firestore add()
+          status: "Order Placed",
+          history: [], // Initially empty
+        });
+  
+        // Step 2: Update the history field
+        await orderDocRef.update({
+          history: firestore.FieldValue.arrayUnion({
+            status: "Order Placed",
+            date: firestore.Timestamp.now(), // Used directly inside update()
+          }),
+        });
+  
+        console.log("Order placed successfully:", orderDocRef.id);
       }
-
+  
       // Clear the selected cart items after order placement
       const parsedSelectedCart = JSON.parse(selectedCart || "[]");
       for (const { itemId } of parsedSelectedCart) {
@@ -177,7 +246,7 @@ export default function CheckoutPage() {
           .doc(itemId)
           .delete();
       }
-
+  
       Alert.alert("Order Placed", "Your order has been placed successfully!");
     } catch (error) {
       console.error("Error placing order:", error);

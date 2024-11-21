@@ -18,7 +18,7 @@ export default function OrderManagementPage() {
         const ordersSnapshot = await firestore()
           .collection("orders")
           .where("storeRef", "==", firestore().collection("users").doc(currentUser.id))
-          .where("status", "==", "Pending")
+          .where("status", "==", "Order Placed")
           .orderBy("createdAt", "desc")
           .get();
 
@@ -77,7 +77,13 @@ export default function OrderManagementPage() {
 
 const handleAccept = async (orderId, customerName) => {
   try {
-    await firestore().collection("orders").doc(orderId).update({ status: "Accepted" });
+    await firestore().collection("orders").doc(orderId).update({
+      status: "Order Confirmed",
+      history: firestore.FieldValue.arrayUnion({
+        status: "Order Confirmed",
+        date: firestore.Timestamp.now(),
+      }),
+    });
     setGroupedOrders((prevGroupedOrders) =>
       prevGroupedOrders.map((group) =>
         group.customerName === customerName
@@ -92,8 +98,8 @@ const handleAccept = async (orderId, customerName) => {
     // Show success toast
     Toast.show({
       type: "success",
-      text1: "Order Accepted",
-      text2: `Order ID ${orderId} has been accepted.`,
+      text1: "Order Confirmed",
+      text2: `Order ID ${orderId} has been confirmed.`,
     });
   } catch (error) {
     console.error("Error accepting order:", error);
@@ -109,7 +115,14 @@ const handleAccept = async (orderId, customerName) => {
 
 const handleReject = async (orderId, customerName) => {
   try {
-    await firestore().collection("orders").doc(orderId).update({ status: "Rejected" });
+    await firestore().collection("orders").doc(orderId).update({
+      status: "Rejected",
+      history: firestore.FieldValue.arrayUnion({
+        status: "Rejected",
+        date: firestore.Timestamp.now(),
+      }),
+    });
+
     setGroupedOrders((prevGroupedOrders) =>
       prevGroupedOrders.map((group) =>
         group.customerName === customerName
