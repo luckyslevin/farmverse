@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ActivityIndicator, StyleSheet, Image } from 'react-native';
+import { ActivityIndicator, StyleSheet, Image, ScrollView } from 'react-native';
 import { Button, TextInput } from 'react-native-paper';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
@@ -79,7 +79,7 @@ export default function CreateProduct() {
   return (
     <>
     <Stack.Screen options={{title: "Add Product"}}/>
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <TextInput
         label="Product Name"
         value={productName}
@@ -137,7 +137,7 @@ export default function CreateProduct() {
           Create Product
         </Button>
       )}
-    </View>
+    </ScrollView>
     </>
   );
 }

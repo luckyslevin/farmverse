@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Image, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import { Button, TextInput, Text } from 'react-native-paper';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
@@ -116,7 +116,7 @@ export default function EditProduct() {
   return (
     <>
       <Stack.Screen options={{ title: "Edit Product" }} />
-      <View style={styles.container}>
+      <ScrollView style={styles.container}>
 
         {(imageUri || existingImageUri) && (
           <TouchableOpacity onPress={pickImage}>
@@ -170,7 +170,7 @@ export default function EditProduct() {
             Update Product
           </Button>
         )}
-      </View>
+      </ScrollView>
     </>
   );
 }
