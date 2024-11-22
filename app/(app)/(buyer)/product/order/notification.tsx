@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, ScrollView, Image, Text } from "react-native";
+import { View, StyleSheet, ScrollView, Image } from "react-native";
 import firestore from "@react-native-firebase/firestore";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/user";
-import { Stack } from "expo-router";
+import { Stack, Link, router } from "expo-router";
 import Header from "@/components/Header";
+import { Card, Text, ActivityIndicator } from "react-native-paper";
 
 export default function NotificationPage() {
   const [notifications, setNotifications] = useState([]);
@@ -70,6 +71,7 @@ export default function NotificationPage() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4f4f4f" />
         <Text style={styles.loadingText}>Loading Notifications...</Text>
       </View>
     );
@@ -83,25 +85,39 @@ export default function NotificationPage() {
 
       <ScrollView style={styles.container}>
         {notifications.map((notification, index) => (
-          <View key={index} style={styles.notificationCard}>
-            <Image
-              source={{
-                uri: notification.image || "https://via.placeholder.com/50", // Placeholder if no image available
-              }}
-              style={styles.notificationImage}
-            />
-            <View style={styles.notificationContent}>
-              <Text style={styles.notificationTitle}>
-                {notification.status}
-              </Text>
-              <Text style={styles.notificationMessage}>
-                {notification.status === "Order Placed"
-                  ? `Your order ${notification.id} is now pending with ${notification.storeName}.`
-                  : `Your order ${notification.id} status updated to "${notification.status}".`}
-              </Text>
-              <Text style={styles.notificationDate}>{notification.date}</Text>
-            </View>
-          </View>
+          <Card
+            key={index}
+            style={styles.notificationCard}
+            onPress={() => {
+              // Navigate to the order details page
+              router.push(`/product/order/${notification.id}`);
+            }}
+            mode="contained"
+          >
+            <Card.Content style={styles.cardContent}>
+              <Image
+                source={{
+                  uri: notification.image || "https://via.placeholder.com/50", // Placeholder if no image available
+                }}
+                style={styles.notificationImage}
+              />
+              <View style={styles.notificationTextContainer}>
+                <Text style={styles.notificationTitle}>
+                  {notification.status}
+                </Text>
+                <Text style={styles.notificationMessage}>
+                  {notification.status === "Order Placed"
+                    ? `Your order `
+                    : `Your order `}
+                  <Text style={styles.orderIdText}>{notification.id}</Text>
+                  {notification.status === "Order Placed"
+                    ? ` is now pending with ${notification.storeName}.`
+                    : ` status updated to "${notification.status}".`}
+                </Text>
+                <Text style={styles.notificationDate}>{notification.date}</Text>
+              </View>
+            </Card.Content>
+          </Card>
         ))}
       </ScrollView>
     </>
@@ -124,13 +140,14 @@ const styles = StyleSheet.create({
     color: "#4f4f4f",
   },
   notificationCard: {
-    flexDirection: "row",
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
     marginBottom: 10,
-    padding: 10,
+    borderRadius: 8,
+    // backgroundColor: "#ffffff",
+    elevation: 2,
+  },
+  cardContent: {
+    flexDirection: "row",
     alignItems: "center",
-    elevation: 1,
   },
   notificationImage: {
     width: 50,
@@ -138,7 +155,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginRight: 10,
   },
-  notificationContent: {
+  notificationTextContainer: {
     flex: 1,
   },
   notificationTitle: {
@@ -150,6 +167,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#4f4f4f",
     marginVertical: 4,
+  },
+  orderIdText: {
+    fontSize: 14,
+    color: "#2f8fdd",
+    textDecorationLine: "underline",
   },
   notificationDate: {
     fontSize: 12,

@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { View, StyleSheet, ScrollView, Image, ActivityIndicator } from "react-native";
 import { Text, Button } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
-import { useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
+import Header from "@/components/Header";
 
 export default function OrderTrackingPage() {
   const { orderId } = useLocalSearchParams();
@@ -55,13 +56,17 @@ export default function OrderTrackingPage() {
   }
 
   return (
+    <>
+    <Stack.Screen
+        options={{ title: "Order Details", headerRight: () => <Header /> }}
+      />
     <ScrollView style={styles.container}>
       {/* Header Section */}
       <View style={styles.header}>
-        <Image
+        {/* <Image
           source={{ uri: "https://via.placeholder.com/100" }}
           style={styles.headerIcon}
-        />
+        /> */}
         <Text style={styles.thankYouText}>Thanks for your Order</Text>
       </View>
 
@@ -115,6 +120,7 @@ export default function OrderTrackingPage() {
         Back to Home
       </Button>
     </ScrollView>
+    </>
   );
 }
 
@@ -145,7 +151,7 @@ const styles = StyleSheet.create({
   thankYouText: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#4CAF50",
+    // color: "#4CAF50",
   },
   itemsSection: {
     marginBottom: 20,
@@ -240,7 +246,7 @@ const styles = StyleSheet.create({
     color: "#4f4f4f",
   },
   backButton: {
-    backgroundColor: "#4CAF50",
+    // backgroundColor: "#4CAF50",
     borderRadius: 20,
     padding: 10,
   },
