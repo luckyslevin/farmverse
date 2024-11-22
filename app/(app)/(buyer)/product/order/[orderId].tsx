@@ -5,10 +5,11 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Text, Button } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import Header from "@/components/Header";
 
 export default function OrderTrackingPage() {
@@ -53,6 +54,45 @@ export default function OrderTrackingPage() {
 
     fetchOrderDetails();
   }, [orderId]);
+
+  const handleCancelOrder = async () => {
+    Alert.alert(
+      "Cancel Order",
+      "Are you sure you want to cancel this order?",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "Yes",
+          onPress: async () => {
+            try {
+              await firestore().collection("orders").doc(orderId).update({
+                status: "Canceled",
+                history: firestore.FieldValue.arrayUnion({
+                  status: "Canceled",
+                  date: firestore.Timestamp.now(),
+                }),
+              });
+              setOrderData((prevData) => ({
+                ...prevData,
+                status: "Canceled",
+                history: [
+                  ...prevData.history,
+                  { status: "Canceled", date: firestore.Timestamp.now() },
+                ],
+              }));
+
+              Alert.alert("Success", "Your order has been canceled.");
+              router.push("/"); // Navigate back to the home page or any relevant page
+            } catch (error) {
+              console.error("Error canceling the order:", error);
+              Alert.alert("Error", "Failed to cancel the order. Please try again.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
 
   if (loading || !orderData) {
     return (
@@ -148,7 +188,20 @@ export default function OrderTrackingPage() {
         </View>
 
         {/* Back to Home Button */}
-        <Button mode="contained" onPress={() => {}} style={styles.backButton}>
+        {/* <Button mode="contained" onPress={onCancel} style={styles.backButton}>
+          Cancel Order
+        </Button> */}
+          {orderData.status !== "Canceled" && orderData.status !== "Rejected" && (
+            <Button
+              mode="contained"
+              onPress={handleCancelOrder}
+              style={styles.cancelButton}
+            >
+              Cancel Order
+            </Button>
+          )}
+
+        <Button mode="contained" onPress={() => router.push("/(buyer)/product")} style={styles.backButton}>
           Back to Home
         </Button>
       </ScrollView>
@@ -282,4 +335,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 10,
   },
+  cancelButton: {
+    backgroundColor: "#f44336",
+    borderRadius: 20,
+    padding: 10,
+    marginBottom: 10,
+  }
 });
