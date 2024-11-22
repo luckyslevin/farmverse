@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, ScrollView, Image, ActivityIndicator } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Image,
+  ActivityIndicator,
+} from "react-native";
 import { Text, Button } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
 import { Stack, useLocalSearchParams } from "expo-router";
@@ -29,7 +35,9 @@ export default function OrderTrackingPage() {
               return {
                 ...item,
                 name: productDoc.data()?.name || "Unknown Product",
-                imageUrl: productDoc.data()?.imageUrl || "https://via.placeholder.com/100",
+                imageUrl:
+                  productDoc.data()?.imageUrl ||
+                  "https://via.placeholder.com/100",
               };
             })
           );
@@ -57,38 +65,60 @@ export default function OrderTrackingPage() {
 
   return (
     <>
-    <Stack.Screen
+      <Stack.Screen
         options={{ title: "Order Details", headerRight: () => <Header /> }}
       />
-    <ScrollView style={styles.container}>
-      {/* Header Section */}
-      <View style={styles.header}>
-        {/* <Image
+      <ScrollView style={styles.container}>
+        {/* Header Section */}
+        <View style={styles.header}>
+          {/* <Image
           source={{ uri: "https://via.placeholder.com/100" }}
           style={styles.headerIcon}
         /> */}
-        <Text style={styles.thankYouText}>Thanks for your Order</Text>
-      </View>
+          <Text style={styles.thankYouText}>Thanks for your Order</Text>
+        </View>
 
-      {/* Items Section */}
-      <View style={styles.itemsSection}>
-        {orderData.items.map((item, index) => (
-          <View key={index} style={styles.itemCard}>
-            <Image source={{ uri: item.imageUrl }} style={styles.itemImage} />
-            <View style={styles.itemDetails}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemPrice}>₱{item.price}</Text>
-              <Text style={styles.itemQty}>Qty: {item.quantity}</Text>
+        {/* Items Section */}
+        <View style={styles.itemsSection}>
+          {orderData.items.map((item, index) => (
+            <View key={index} style={styles.itemCard}>
+              <Image source={{ uri: item.imageUrl }} style={styles.itemImage} />
+              <View style={styles.itemDetails}>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemPrice}>₱{item.price}</Text>
+                <Text style={styles.itemQty}>Qty: {item.quantity}</Text>
+              </View>
             </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
 
-      {/* Order Status Section */}
-      <View style={styles.statusSection}>
-        <Text style={styles.statusHeader}>Order Status</Text>
-        <Text style={styles.orderId}>Order ID - {orderId}</Text>
-        <View style={styles.timeline}>
+        {/* Order Status Section */}
+        <View style={styles.statusSection}>
+          <Text style={styles.statusHeader}>Order Status</Text>
+          <Text style={styles.orderId}>Order ID - {orderId}</Text>
+          <View style={styles.timeline}>
+            {orderData.history
+              .sort((a, b) => b.date.toDate() - a.date.toDate()) // Sort in ascending order
+              .map((historyItem, index) => (
+                <View key={index} style={styles.timelineItem}>
+                  <View style={styles.timelineMarker}>
+                    {index <= orderData.history.length - 1 && (
+                      <View style={styles.timelineCompleted} />
+                    )}
+                  </View>
+                  <View style={styles.timelineContent}>
+                    <Text style={styles.timelineStatus}>
+                      {historyItem.status}
+                    </Text>
+                    <Text style={styles.timelineDate}>
+                      {historyItem.date.toDate().toLocaleDateString()}{" "}
+                      {historyItem.date.toDate().toLocaleTimeString()}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+          </View>
+          {/* <View style={styles.timeline}>
           {orderData.history.map((historyItem, index) => (
             <View key={index} style={styles.timelineItem}>
               <View style={styles.timelineMarker}>
@@ -105,21 +135,23 @@ export default function OrderTrackingPage() {
               </View>
             </View>
           ))}
+        </View> */}
         </View>
-      </View>
 
-      {/* Delivery Address */}
-      <View style={styles.addressSection}>
-        <Text style={styles.addressHeader}>Delivery Address</Text>
-        <Text style={styles.addressText}>Store: {orderData.storeName}</Text>
-        <Text style={styles.addressText}>Total Amount: ₱{orderData.totalAmount}</Text>
-      </View>
+        {/* Delivery Address */}
+        <View style={styles.addressSection}>
+          <Text style={styles.addressHeader}>Delivery Address</Text>
+          <Text style={styles.addressText}>Store: {orderData.storeName}</Text>
+          <Text style={styles.addressText}>
+            Total Amount: ₱{orderData.totalAmount}
+          </Text>
+        </View>
 
-      {/* Back to Home Button */}
-      <Button mode="contained" onPress={() => {}} style={styles.backButton}>
-        Back to Home
-      </Button>
-    </ScrollView>
+        {/* Back to Home Button */}
+        <Button mode="contained" onPress={() => {}} style={styles.backButton}>
+          Back to Home
+        </Button>
+      </ScrollView>
     </>
   );
 }
