@@ -36,6 +36,7 @@ export function useAccount(userId?: string): {
         .doc(user.uid)
         .set({
           id: user.uid,
+          createdAt: firestore.FieldValue.serverTimestamp(),
           ...account,
         });
     },

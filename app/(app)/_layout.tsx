@@ -41,7 +41,7 @@ export default function Layout() {
     console.log(segments)
     if (session && !farmerGroup && session?.type === "Farmer") {
       console.log(1111)
-      router.replace("/(farmer)/store");
+      router.replace("/(farmer)/home");
     } else if (!session && farmerGroup) {
       console.log(2222)
       router.replace({ pathname: "/login/[type]", params: { type: "Farmer" } });

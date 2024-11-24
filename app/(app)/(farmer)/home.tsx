@@ -4,6 +4,7 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { Text, Card } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
@@ -11,128 +12,105 @@ import { LineChart } from "react-native-chart-kit";
 
 export default function SalesSummaryPage() {
   const [loading, setLoading] = useState(true);
+  const [timeframe, setTimeframe] = useState("yearly"); // yearly, monthly, weekly
   const [summary, setSummary] = useState({
     newOrders: 0,
     totalSales: 0,
     addedToCart: 0,
     newCustomers: 0,
     earningsHistory: [],
-    percentages: {
-      newOrders: 0,
-      totalSales: 0,
-      addedToCart: 0,
-      newCustomers: 0,
-    },
   });
 
   useEffect(() => {
     const fetchSalesSummary = async () => {
       try {
         setLoading(true);
-  
-        const startOfYear = new Date(new Date().getFullYear(), 0, 1);
-        const startOfLastYear = new Date(new Date().getFullYear() - 1, 0, 1);
-  
-        // Current year data
+
+        const now = new Date();
+        let startOfPeriod;
+
+        // Define the start of the period based on the selected timeframe
+        if (timeframe === "yearly") {
+          startOfPeriod = new Date(now.getFullYear(), 0, 1);
+        } else if (timeframe === "monthly") {
+          startOfPeriod = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (timeframe === "weekly") {
+          const startOfWeek = now.getDate() - now.getDay(); // Start on Sunday
+          startOfPeriod = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            startOfWeek
+          );
+        }
+
+        // Fetch orders for the selected timeframe
         const ordersSnapshot = await firestore()
           .collection("orders")
-          .where("createdAt", ">=", startOfYear)
+          .where("createdAt", ">=", startOfPeriod)
           .get();
-  
-        // Last year data for comparison
-        const lastYearOrdersSnapshot = await firestore()
-          .collection("orders")
-          .where("createdAt", ">=", startOfLastYear)
-          .where("createdAt", "<", startOfYear)
-          .get();
-  
-        // Process current year orders
+
         let newOrders = 0;
         let totalSales = 0; // For delivered orders only
-        let earningsHistory = {};
-  
+        let earningsHistory = timeframe === "weekly" ? Array(7).fill(0) : {};
+
         ordersSnapshot.forEach((doc) => {
           const data = doc.data();
           newOrders++;
           if (data.status === "Delivered") {
             totalSales += data.totalAmount; // Sum up only delivered orders
-            const month = new Date(data.createdAt.toDate()).getMonth();
-            earningsHistory[month] = (earningsHistory[month] || 0) + data.totalAmount;
+
+            const date = new Date(data.createdAt.toDate());
+            const periodKey =
+              timeframe === "yearly"
+                ? date.getMonth() // Month index for yearly
+                : timeframe === "monthly"
+                ? date.getDate() - 1 // Date index for monthly
+                : date.getDay(); // Day index (0 = Sun, 6 = Sat) for weekly
+
+            if (timeframe === "weekly") {
+              earningsHistory[periodKey] += data.totalAmount;
+            } else {
+              earningsHistory[periodKey] =
+                (earningsHistory[periodKey] || 0) + data.totalAmount;
+            }
           }
         });
-  
-        // Process last year orders for comparison
-        let lastYearOrders = 0;
-        let lastYearSales = 0;
-  
-        lastYearOrdersSnapshot.forEach((doc) => {
-          const data = doc.data();
-          lastYearOrders++;
-          if (data.status === "Delivered") {
-            lastYearSales += data.totalAmount; // Sum up only delivered orders
-          }
-        });
-  
-        // New customers
+
+        // New customers for the selected timeframe
         const customersSnapshot = await firestore()
           .collection("users")
-          .where("createdAt", ">=", startOfYear)
+          .where("createdAt", ">=", startOfPeriod)
           .get();
-  
-        const lastYearCustomersSnapshot = await firestore()
-          .collection("users")
-          .where("createdAt", ">=", startOfLastYear)
-          .where("createdAt", "<", startOfYear)
-          .get();
-  
         const newCustomers = customersSnapshot.size;
-        const lastYearCustomers = lastYearCustomersSnapshot.size;
-  
+
         // Added to cart (fetch from carts subcollection for all users)
         const usersSnapshot = await firestore().collection("users").get();
         let addedToCart = 0;
-        let lastYearAddedToCart = 0;
-  
+
         await Promise.all(
           usersSnapshot.docs.map(async (userDoc) => {
             const cartsSnapshot = await userDoc.ref
               .collection("carts")
-              .where("createdAt", ">=", startOfYear)
+              .where("createdAt", ">=", startOfPeriod)
               .get();
             addedToCart += cartsSnapshot.size;
-  
-            const lastYearCartsSnapshot = await userDoc.ref
-              .collection("carts")
-              .where("createdAt", ">=", startOfLastYear)
-              .where("createdAt", "<", startOfYear)
-              .get();
-            lastYearAddedToCart += lastYearCartsSnapshot.size;
           })
         );
-  
-        // Calculate percentages
-        // const calculatePercentageChange = (current, previous) => {
-        //   if (previous === 0) return current > 0 ? 100 : 0; // Handle edge cases
-        //   return ((current - previous) / previous) * 100;
-        // };
-  
-        // const percentages = {
-        //   newOrders: calculatePercentageChange(newOrders, lastYearOrders),
-        //   totalSales: calculatePercentageChange(totalSales, lastYearSales),
-        //   addedToCart: calculatePercentageChange(addedToCart, lastYearAddedToCart),
-        //   newCustomers: calculatePercentageChange(newCustomers, lastYearCustomers),
-        // };
-  
+
         // Prepare data for line chart
-        const earningsData = Array.from({ length: 12 }, (_, i) => earningsHistory[i] || 0);
-  
+        const earningsData =
+          timeframe === "yearly"
+            ? Array.from({ length: 12 }, (_, i) => earningsHistory[i] || 0)
+            : timeframe === "monthly"
+            ? Array.from({ length: 31 }, (_, i) => earningsHistory[i] || 0)
+            : earningsHistory; // Weekly data is already aligned
+
         setSummary({
           newOrders,
           totalSales,
           addedToCart,
           newCustomers,
           earningsHistory: earningsData,
-          // percentages,
         });
       } catch (error) {
         console.error("Error fetching sales summary:", error);
@@ -140,9 +118,9 @@ export default function SalesSummaryPage() {
         setLoading(false);
       }
     };
-  
+
     fetchSalesSummary();
-  }, []);  
+  }, [timeframe]);
 
   if (loading) {
     return (
@@ -157,46 +135,53 @@ export default function SalesSummaryPage() {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Sales Summary</Text>
 
+      {/* Timeframe Selector */}
+      <View style={styles.timeframeContainer}>
+        {["weekly", "monthly", "yearly"].map((period) => (
+          <TouchableOpacity
+            key={period}
+            onPress={() => setTimeframe(period)}
+            style={[
+              styles.timeframeButton,
+              timeframe === period && styles.activeTimeframe,
+            ]}
+          >
+            <Text
+              style={[
+                styles.timeframeText,
+                timeframe === period && styles.activeTimeframeText,
+              ]}
+            >
+              {period.charAt(0).toUpperCase() + period.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       {/* Metrics Section */}
       <View style={styles.cardsContainer}>
         <Card style={styles.card}>
           <Card.Content>
             <Text style={styles.cardValue}>{summary.newOrders}</Text>
             <Text style={styles.cardLabel}>New Orders</Text>
-            {/* <Text style={[styles.cardPercentage, { color: summary.percentages.newOrders >= 0 ? "green" : "red" }]}>
-              {summary.percentages.newOrders >= 0 ? "+" : ""}
-              {summary.percentages.newOrders.toFixed(1)}%
-            </Text> */}
           </Card.Content>
         </Card>
         <Card style={styles.card}>
           <Card.Content>
             <Text style={styles.cardValue}>₱{summary.totalSales}</Text>
             <Text style={styles.cardLabel}>Total Sales</Text>
-            {/* <Text style={[styles.cardPercentage, { color: summary.percentages.totalSales >= 0 ? "green" : "red" }]}>
-              {summary.percentages.totalSales >= 0 ? "+" : ""}
-              {summary.percentages.totalSales.toFixed(1)}%
-            </Text> */}
           </Card.Content>
         </Card>
         <Card style={styles.card}>
           <Card.Content>
             <Text style={styles.cardValue}>{summary.addedToCart}</Text>
             <Text style={styles.cardLabel}>Added to Cart</Text>
-            {/* <Text style={[styles.cardPercentage, { color: summary.percentages.addedToCart >= 0 ? "green" : "red" }]}>
-              {summary.percentages.addedToCart >= 0 ? "+" : ""}
-              {summary.percentages.addedToCart.toFixed(1)}%
-            </Text> */}
           </Card.Content>
         </Card>
         <Card style={styles.card}>
           <Card.Content>
             <Text style={styles.cardValue}>{summary.newCustomers}</Text>
             <Text style={styles.cardLabel}>New Customers</Text>
-            {/* <Text style={[styles.cardPercentage, { color: summary.percentages.newCustomers >= 0 ? "green" : "red" }]}>
-              {summary.percentages.newCustomers >= 0 ? "+" : ""}
-              {summary.percentages.newCustomers.toFixed(1)}%
-            </Text> */}
           </Card.Content>
         </Card>
       </View>
@@ -205,26 +190,46 @@ export default function SalesSummaryPage() {
       <Text style={styles.sectionTitle}>Earnings History</Text>
       <LineChart
         data={{
-          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+          labels:
+            timeframe === "yearly"
+              ? [
+                  "Jan",
+                  "Feb",
+                  "Mar",
+                  "Apr",
+                  "May",
+                  "Jun",
+                  "Jul",
+                  "Aug",
+                  "Sep",
+                  "Oct",
+                  "Nov",
+                  "Dec",
+                ] // 12 months
+              : timeframe === "monthly"
+              ? Array.from({ length: 31 }, (_, i) =>
+                  (i + 1) % 5 === 0 ? (i + 1).toString() : ""
+                ) // Every 5th day
+              : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], // Weekly labels
           datasets: [
             {
               data: summary.earningsHistory,
             },
           ],
-          legend: ["Earnings"] // optional
         }}
-        width={350}
+        width={350} // Ensure this matches your screen width
         height={220}
         chartConfig={{
           backgroundColor: "#f7fbe1",
           backgroundGradientFrom: "#f7fbe1",
           backgroundGradientTo: "#f7fbe1",
           color: (opacity = 1) => `rgba(47, 79, 79, ${opacity})`,
-          strokeWidth: 2,
+          strokeWidth: 2, // Thickness of the line
+          decimalPlaces: 0, // No decimal places for y-axis values
+          labelColor: (opacity = 1) => `rgba(47, 79, 79, ${opacity})`,
         }}
-        bezier
-        yAxisLabel="₱" // Add peso sign to Y-axis values
-
+        bezier // Smooth curve for the chart
+        yAxisLabel="₱" // Prefix for y-axis values
         style={styles.chart}
       />
     </ScrollView>
@@ -249,6 +254,26 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
   },
+  timeframeContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  timeframeButton: {
+    padding: 10,
+    marginHorizontal: 5,
+    borderRadius: 8,
+    backgroundColor: "#dcdcdc",
+  },
+  activeTimeframe: {
+    backgroundColor: "#2f4f4f",
+  },
+  timeframeText: {
+    color: "#4f4f4f",
+  },
+  activeTimeframeText: {
+    color: "#ffffff",
+  },
   cardsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -270,9 +295,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#4f4f4f",
     marginVertical: 4,
-  },
-  cardPercentage: {
-    fontSize: 12,
   },
   sectionTitle: {
     fontSize: 18,

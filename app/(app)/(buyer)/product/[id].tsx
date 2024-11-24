@@ -72,6 +72,7 @@ export default function ProductDetailPage() {
           // If item does not exist in the cart, set initial quantity to 1
           transaction.set(cartItemRef, {
             productRef: firestore().doc(`products/${product.id}`),
+            createdAt: firestore.FieldValue.serverTimestamp(),
             quantity: 1,
           });
         }

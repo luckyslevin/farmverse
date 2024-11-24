@@ -2,6 +2,7 @@ import { Tabs } from "expo-router";
 import { useTheme, IconButton } from "react-native-paper";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import auth from "@react-native-firebase/auth";
+import Header from "@/components/Header";
 
 export default function Layout() {
   const theme = useTheme();
@@ -22,16 +23,7 @@ export default function Layout() {
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onSurfaceDisabled,
         headerRight: () => (
-          <IconButton
-            icon={() => (
-              <MaterialIcons
-                name="logout"
-                size={24}
-                color={theme.colors.primary}
-              />
-            )}
-            onPress={onLogout}
-          />
+          <Header/>
         ),
       }}
     >
@@ -77,6 +69,7 @@ export default function Layout() {
         name="orderHistory"
         options={{
           title: "Order History",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons
             name="clipboard-list-outline" // Icon for order history

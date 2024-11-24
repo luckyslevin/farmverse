@@ -116,9 +116,9 @@ const handleAccept = async (orderId, customerName) => {
 const handleReject = async (orderId, customerName) => {
   try {
     await firestore().collection("orders").doc(orderId).update({
-      status: "Rejected",
+      status: "Canceled",
       history: firestore.FieldValue.arrayUnion({
-        status: "Rejected",
+        status: "Canceled",
         date: firestore.Timestamp.now(),
       }),
     });
