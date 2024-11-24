@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { View, StyleSheet, Alert, FlatList } from "react-native";
+import { View, StyleSheet, Alert, FlatList, TouchableOpacity } from "react-native";
 import {
   Text,
   Button,
@@ -361,14 +361,19 @@ export default function Page() {
             rules={{ required: "Avatar is required" }}
             render={({ field: { onChange } }) => (
               <View style={{ alignItems: "center", marginBottom: 16 }}>
-                {avatarUri ? (
-                  <>
-                    <Avatar.Image size={80} source={{ uri: avatarUri }} />
-                  </>
-                ) : (
-                  <Avatar.Text size={80} label="T" />
-                )}
-                <Button onPress={handleChangeAvatar}>Change Avatar</Button>
+                <TouchableOpacity onPress={handleChangeAvatar}>
+                  {avatarUri ? (
+                    <Avatar.Image
+                      size={80}
+                      source={{ uri: avatarUri }}
+                    />
+                  ) : (
+                    <Avatar.Text
+                      size={80}
+                      label={user?.store?.name.charAt(0)}
+                    />
+                  )}
+                </TouchableOpacity>
               </View>
             )}
           />

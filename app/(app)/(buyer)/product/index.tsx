@@ -64,7 +64,7 @@ export default function Product() {
           {item.user.store?.avatarUrl ? (
             <Avatar.Image size={20} source={{ uri: item.user.store.avatarUrl }} />
           ) : (
-            <Avatar.Text size={20} label="t" />
+            <Avatar.Text size={20} label={item.user.store.name.charAt(0)} />
           )}
           <Text style={styles.sellerName}>{item.user.store.name}</Text>
         </View>

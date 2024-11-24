@@ -4,12 +4,12 @@ import { Text, TextInput, Button, Divider, Avatar } from 'react-native-paper';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
-import { useAtomValue } from 'jotai';
+import { useAtom } from 'jotai';
 import { userAtom } from '@/stores/user';
 import auth from "@react-native-firebase/auth";
 
 export default function ProfilePage() {
-  const currentUser = useAtomValue(userAtom);
+  const [currentUser, setUser] = useAtom(userAtom);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -69,10 +69,11 @@ export default function ProfilePage() {
         firstName,
         lastName,
         email,
+        password,
         address, // Include address in Firestore update
         avatarUrl: finalAvatarUrl,
       });
-  
+      console.log(password)
       // Update Auth email and password
       const authUser = auth().currentUser;
       
@@ -92,7 +93,8 @@ export default function ProfilePage() {
         await authUser.updatePassword(password);
       }
   
-      setUserData({ ...userData, firstName, lastName, email, address, avatarUrl: finalAvatarUrl });
+      setUserData({ ...userData, firstName, lastName, password, email, address, avatarUrl: finalAvatarUrl });
+      setUser({ ...currentUser, firstName, lastName, password, email, address, avatarUrl: finalAvatarUrl });
       setAvatarUrl(finalAvatarUrl); // Update displayed avatar URL
       setEditing(false);
       Alert.alert("Success", "Profile updated successfully.");
