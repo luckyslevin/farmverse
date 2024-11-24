@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, ScrollView, Image, ActivityIndicator } from "react-native";
 import { Text, Button, Card } from "react-native-paper";
-import firestore from "@react-native-firebase/firestore";
+import firestore, { or } from "@react-native-firebase/firestore";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/user";
 import { Link } from "expo-router";
@@ -78,24 +78,32 @@ export default function OrderManagementPage() {
 
   const handleAccept = async (orderId, customerName) => {
     try {
+      // Update the order status in Firestore
       await firestore().collection("orders").doc(orderId).update({
         status: "Order Confirmed",
+        "notificationSent.orderConfirmed": false,
         history: firestore.FieldValue.arrayUnion({
           status: "Order Confirmed",
           date: firestore.Timestamp.now(),
         }),
       });
+  
+      // Update the grouped orders state
       setGroupedOrders((prevGroupedOrders) =>
         prevGroupedOrders.map((group) =>
           group.customerName === customerName
             ? {
                 ...group,
-                orders: group.orders.filter((order) => order.orderId !== orderId),
+                orders: group.orders.map((order) =>
+                  order.orderId === orderId
+                    ? { ...order, status: "Order Confirmed" }
+                    : order
+                ),
               }
             : group
-        ).filter((group) => group.orders.length > 0)
+        )
       );
-
+  
       // Show success toast
       Toast.show({
         type: "success",
@@ -104,7 +112,7 @@ export default function OrderManagementPage() {
       });
     } catch (error) {
       console.error("Error accepting order:", error);
-
+  
       // Show error toast
       Toast.show({
         type: "error",
@@ -113,9 +121,10 @@ export default function OrderManagementPage() {
       });
     }
   };
-
+  
   const handleReject = async (orderId, customerName) => {
     try {
+      // Update the order status in Firestore
       await firestore().collection("orders").doc(orderId).update({
         status: "Canceled",
         history: firestore.FieldValue.arrayUnion({
@@ -123,18 +132,23 @@ export default function OrderManagementPage() {
           date: firestore.Timestamp.now(),
         }),
       });
-
+  
+      // Update the grouped orders state
       setGroupedOrders((prevGroupedOrders) =>
         prevGroupedOrders.map((group) =>
           group.customerName === customerName
             ? {
                 ...group,
-                orders: group.orders.filter((order) => order.orderId !== orderId),
+                orders: group.orders.map((order) =>
+                  order.orderId === orderId
+                    ? { ...order, status: "Canceled" }
+                    : order
+                ),
               }
             : group
-        ).filter((group) => group.orders.length > 0)
+        )
       );
-
+  
       // Show success toast
       Toast.show({
         type: "success",
@@ -143,7 +157,7 @@ export default function OrderManagementPage() {
       });
     } catch (error) {
       console.error("Error rejecting order:", error);
-
+  
       // Show error toast
       Toast.show({
         type: "error",
@@ -152,7 +166,7 @@ export default function OrderManagementPage() {
       });
     }
   };
-
+  
   if (loading) {
     return (
       <View style={styles.loadingContainer}>

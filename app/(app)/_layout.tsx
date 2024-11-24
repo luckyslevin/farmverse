@@ -44,13 +44,13 @@ export default function Layout() {
       router.replace("/(farmer)/home");
     } else if (!session && farmerGroup) {
       console.log(2222)
-      router.replace({ pathname: "/login/[type]", params: { type: "Farmer" } });
+      router.replace("/");
     } else if (session && !buyerGroup && session?.type === "User") {
       console.log(3333)
       router.replace("/(buyer)/product");
     } else if (!session && buyerGroup) {
       console.log(4444)
-      router.replace({ pathname: "/login/[type]", params: { type: "User" } });
+      router.replace("/");
     }
   }, [session, initializing]);
   if (initializing) {

@@ -117,7 +117,7 @@ export default function CheckoutPage() {
           notificationSent: {
             orderPlaced: false,
             orderConfirmed: false,
-            delivered: false
+            delivered: false,
           },
           history: [], // Initially empty
         });

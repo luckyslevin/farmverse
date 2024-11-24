@@ -29,7 +29,10 @@ export default function RootLayout() {
         <PaperProvider theme={{ ...CombinedLightTheme, roundness: 27.5 }}>
           <ThemeProvider value={CombinedLightTheme}>
             <Slot />
-            <Toast />
+            <Toast
+              position="bottom" // Set position to the bottom
+              visibilityTime={2000} // Adjust visibility time (optional)
+            />
           </ThemeProvider>
         </PaperProvider>
       </JotaiProvider>

@@ -11,6 +11,7 @@ import { Text, Button } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import Header from "@/components/Header";
+import Toast from "react-native-toast-message";
 
 export default function OrderTrackingPage() {
   const { orderId } = useLocalSearchParams();
@@ -72,13 +73,17 @@ export default function OrderTrackingPage() {
           text: "Yes",
           onPress: async () => {
             try {
-              await firestore().collection("orders").doc(orderId).update({
-                status: "Delivered",
-                history: firestore.FieldValue.arrayUnion({
+              await firestore()
+                .collection("orders")
+                .doc(orderId)
+                .update({
                   status: "Delivered",
-                  date: firestore.Timestamp.now(),
-                }),
-              });
+                  "notificationSent.delivered": false,
+                  history: firestore.FieldValue.arrayUnion({
+                    status: "Delivered",
+                    date: firestore.Timestamp.now(),
+                  }),
+                });
               setOrderData((prevData) => ({
                 ...prevData,
                 status: "Delivered",
@@ -88,13 +93,18 @@ export default function OrderTrackingPage() {
                 ],
               }));
 
-              Alert.alert("Success", "The order has been marked as Delivered.");
+              Toast.show({
+                type: "success",
+                text1: "Success",
+                text2: "The order has been marked as Delivered.",
+              });
             } catch (error) {
               console.error("Error marking the order as Delivered:", error);
-              Alert.alert(
-                "Error",
-                "Failed to mark the order as Delivered. Please try again."
-              );
+              Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "Failed to mark the order as Delivered. Please try again.",
+              });
             }
           },
         },
@@ -168,7 +178,8 @@ export default function OrderTrackingPage() {
         <View style={styles.addressSection}>
           <Text style={styles.addressHeader}>Delivery Address</Text>
           <Text style={styles.addressText}>
-            {userData?.firstName + " " + userData?.lastName || "Unknown Customer"}
+            {userData?.firstName + " " + userData?.lastName ||
+              "Unknown Customer"}
           </Text>
           <Text style={styles.addressText}>{userData?.address || "N/A"}</Text>
           <Text style={styles.addressText}>

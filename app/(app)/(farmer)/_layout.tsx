@@ -37,9 +37,7 @@ export default function Layout() {
 
       const updateNotificationSent = async (docId) => {
         await firestore().collection("orders").doc(docId).update({
-          notificationSent: {
-            orderPlaced: true
-          },
+          "notificationSent.orderPlaced": true,
         });
       };
 
