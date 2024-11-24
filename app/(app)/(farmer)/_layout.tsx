@@ -38,7 +38,7 @@ export default function Layout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: "Products",
+          title: "Home",
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="home" color={color} size={size} />
           ),

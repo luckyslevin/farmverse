@@ -8,7 +8,6 @@ import { useAtomValue } from 'jotai';
 import { userAtom } from '@/stores/user';
 import auth from "@react-native-firebase/auth";
 
-
 export default function ProfilePage() {
   const currentUser = useAtomValue(userAtom);
   const [userData, setUserData] = useState(null);
@@ -20,6 +19,7 @@ export default function ProfilePage() {
   const [password, setPassword] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [newAvatarUri, setNewAvatarUri] = useState(null); // To store new avatar URI temporarily
+  const [address, setAddress] = useState('');
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -36,6 +36,7 @@ export default function ProfilePage() {
           setEmail(data.email);
           setPassword(data.password);
           setAvatarUrl(data.avatarUrl || '');
+          setAddress(data.address || ''); // Set address
         } else {
           console.error("No user data found!");
         }
@@ -68,10 +69,11 @@ export default function ProfilePage() {
         firstName,
         lastName,
         email,
+        address, // Include address in Firestore update
         avatarUrl: finalAvatarUrl,
       });
 
-      setUserData({ ...userData, firstName, lastName, email, avatarUrl: finalAvatarUrl });
+      setUserData({ ...userData, firstName, lastName, email, address, avatarUrl: finalAvatarUrl });
       setAvatarUrl(finalAvatarUrl); // Update displayed avatar URL
       setEditing(false);
       Alert.alert("Success", "Profile updated successfully.");
@@ -84,14 +86,12 @@ export default function ProfilePage() {
   };
 
   const selectNewAvatar = async () => {
-    // Ask for permission to access gallery
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission Denied', 'You need to grant camera roll permissions to select an avatar.');
       return;
     }
 
-    // Open image picker
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -100,8 +100,8 @@ export default function ProfilePage() {
     });
 
     if (!result.canceled) {
-      console.log(result.assets[0].uri)
-      setNewAvatarUri(result.assets[0].uri); // Temporarily store new avatar URI
+      console.log(result.assets[0].uri);
+      setNewAvatarUri(result.assets[0].uri);
     }
   };
 
@@ -112,41 +112,7 @@ export default function ProfilePage() {
     setEmail(userData?.email || "");
     setPassword(userData?.password || "");
     setAvatarUrl(userData?.avatarUrl || "");
-  };
-
-  const handleDeleteAccount = async () => {
-    Alert.alert(
-      "Delete Account",
-      "Are you sure you want to delete your account? This action cannot be undone.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setLoading(true);
-
-              // Delete user from Firebase Authentication
-              const user = auth().currentUser;
-              if (user) {
-                await user.delete();
-              }
-
-              Alert.alert("Account Deleted", "Your account has been deleted successfully.");
-            } catch (error) {
-              console.error("Error deleting account:", error);
-              Alert.alert("Error", "There was an issue deleting your account.");
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
+    setAddress(userData?.address || ""); // Reset address
   };
 
   if (loading) {
@@ -187,6 +153,7 @@ export default function ProfilePage() {
         )}
       </View>
       <Divider style={styles.divider} />
+
       <View style={styles.section}>
         <Text style={styles.label}>Last name</Text>
         {editing ? (
@@ -220,27 +187,18 @@ export default function ProfilePage() {
       </View>
       <Divider style={styles.divider} />
 
-      {/* Password Section */}
+      {/* Address Section */}
       <View style={styles.section}>
-        <Text style={styles.label}>Password</Text>
+        <Text style={styles.label}>Address</Text>
         {editing ? (
           <TextInput
             mode="outlined"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={true}
+            value={address}
+            onChangeText={setAddress}
             style={styles.input}
-            autoCapitalize="none"
           />
         ) : (
-          <TextInput
-            mode="outlined"
-            value={password}
-            secureTextEntry={true}
-            style={styles.input}
-            autoCapitalize="none"
-            disabled
-          />
+          <Text style={styles.value}>{userData?.address || "N/A"}</Text>
         )}
       </View>
       <Divider style={styles.divider} />
@@ -261,9 +219,6 @@ export default function ProfilePage() {
             <Button mode="contained" style={styles.editButton} onPress={() => setEditing(true)}>
               Edit Profile
             </Button>
-            {/* <Button mode="text" style={styles.deleteButton} onPress={handleDeleteAccount}>
-              Delete my Account
-            </Button> */}
           </>
         )}
       </View>
@@ -285,29 +240,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 20,
   },
-  avatar: {
-    // backgroundColor: '#4CAF50',
-  },
-  updateAvatarButton: {
-    marginTop: 10,
-  },
+  avatar: {},
   section: {
     padding: 20,
   },
   label: {
     fontSize: 14,
-    // color: '#6b7a6e',
     marginBottom: 5,
   },
   value: {
     fontSize: 18,
     fontWeight: 'bold',
   },
-  input: {
-    // backgroundColor: '#f5f8eb',
-  },
+  input: {},
   divider: {
-    // backgroundColor: '#d4e1c7',
     height: 1,
   },
   buttonContainer: {
@@ -317,19 +263,12 @@ const styles = StyleSheet.create({
   editButton: {
     width: '80%',
     borderRadius: 20,
-    // backgroundColor: '#eaf2d7',
     marginBottom: 10,
   },
   saveButton: {
     width: '80%',
     borderRadius: 20,
-    // backgroundColor: '#4CAF50',
     marginBottom: 10,
   },
-  cancelButton: {
-    // color: '#2f4f4f',
-  },
-  deleteButton: {
-    // color: '#eaf2d7',
-  },
+  cancelButton: {},
 });
