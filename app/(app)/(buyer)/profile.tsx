@@ -54,7 +54,7 @@ export default function ProfilePage() {
     setLoading(true);
     try {
       let finalAvatarUrl = avatarUrl;
-
+  
       // Upload new avatar image if a new image is selected
       if (newAvatarUri) {
         const filename = `${currentUser.id}_avatar.jpg`;
@@ -62,7 +62,7 @@ export default function ProfilePage() {
         await storageRef.putFile(newAvatarUri);
         finalAvatarUrl = await storageRef.getDownloadURL();
       }
-
+  
       // Update Firestore with new data
       const userRef = firestore().collection('users').doc(currentUser.id);
       await userRef.update({
@@ -72,7 +72,26 @@ export default function ProfilePage() {
         address, // Include address in Firestore update
         avatarUrl: finalAvatarUrl,
       });
+  
+      // Update Auth email and password
+      const authUser = auth().currentUser;
+      
+      const credential = auth.EmailAuthProvider.credential(
+        authUser.email,
+        currentUser.password
+      );
+      await authUser.reauthenticateWithCredential(credential);
 
+      // Update email if it has been changed
+      if (email !== authUser.email) {
+        await authUser.updateEmail(email);
+      }
+
+      // Update password if it has been changed
+      if (password) {
+        await authUser.updatePassword(password);
+      }
+  
       setUserData({ ...userData, firstName, lastName, email, address, avatarUrl: finalAvatarUrl });
       setAvatarUrl(finalAvatarUrl); // Update displayed avatar URL
       setEditing(false);
@@ -84,6 +103,7 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
+  
 
   const selectNewAvatar = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -185,6 +205,32 @@ export default function ProfilePage() {
           <Text style={styles.value}>{userData?.email || "N/A"}</Text>
         )}
       </View>
+      <Divider style={styles.divider} />
+
+      {/* Password Section */}
+      <View style={styles.section}>
+        <Text style={styles.label}>Password</Text>
+        {editing ? (
+          <TextInput
+            mode="outlined"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={true}
+            style={styles.input}
+            autoCapitalize="none"
+          />
+        ) : (
+          <TextInput
+            mode="outlined"
+            value={password}
+            secureTextEntry={true}
+            style={styles.input}
+            autoCapitalize="none"
+            disabled
+          />
+        )}
+      </View>
+
       <Divider style={styles.divider} />
 
       {/* Address Section */}

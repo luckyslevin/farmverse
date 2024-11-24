@@ -114,6 +114,11 @@ export default function CheckoutPage() {
           ),
           createdAt: firestore.FieldValue.serverTimestamp(), // Directly used in Firestore add()
           status: "Order Placed",
+          notificationSent: {
+            orderPlaced: false,
+            orderConfirmed: false,
+            delivered: false
+          },
           history: [], // Initially empty
         });
   
@@ -143,7 +148,8 @@ export default function CheckoutPage() {
         text1: "Order Placed",
         text2: `Your order has been placed successfully!`,
       });
-      router.push(`/product/order/${ordersRef.id}`);
+      console.log(ordersRef.id)
+      router.push(`/product/order/notification`);
     } catch (error) {
       console.error("Error placing order:", error);
       Toast.show({

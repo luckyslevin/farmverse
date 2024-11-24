@@ -25,7 +25,7 @@ export default function NotificationPage() {
             "==",
             firestore().collection("users").doc(currentUser.id)
           )
-          .orderBy("createdAt", "asc")
+          .orderBy("createdAt", "desc")
           .get();
 
         const notificationsData = await Promise.all(
