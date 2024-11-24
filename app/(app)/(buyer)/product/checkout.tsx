@@ -5,14 +5,14 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { Text, Button, Divider } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/user";
 import Header from "@/components/Header";
+import Toast from "react-native-toast-message";
 
 export default function CheckoutPage() {
   const { selectedCart } = useLocalSearchParams();
@@ -74,52 +74,6 @@ export default function CheckoutPage() {
         setLoading(false);
       }
     };
-    // const fetchCheckoutItems = async () => {
-    //   try {
-    //     const parsedSelectedCart = JSON.parse(selectedCart || "[]");
-    //     const groupedItems = {};
-
-    //     for (const { storeName, itemId } of parsedSelectedCart) {
-    //       const cartDoc = await firestore()
-    //         .collection("users")
-    //         .doc(currentUser.id)
-    //         .collection("carts")
-    //         .doc(itemId)
-    //         .get();
-
-    //       if (cartDoc.exists) {
-    //         const cartData = cartDoc.data();
-    //         const productDoc = await cartData.productRef.get();
-    //         const productData = productDoc.data();
-    //         console.log("productData", productData)
-    //         if (!groupedItems[storeName]) {
-    //           groupedItems[storeName] = {
-    //             items: [],
-    //             userRef: productData.userRef, // Include userRef for the store
-    //           };
-    //         }
-
-    //         groupedItems[storeName].items.push({
-    //           ...productData,
-    //           quantity: cartData.quantity,
-    //           itemId,
-    //         });
-    //       }
-    //     }
-
-    //     setCheckoutItems(
-    //       Object.entries(groupedItems).map(([storeName, data]) => ({
-    //         storeName,
-    //         userRef: data.userRef,
-    //         items: data.items,
-    //       }))
-    //     );
-    //   } catch (error) {
-    //     console.error("Error fetching checkout items:", error);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
 
     fetchCheckoutItems();
   }, [selectedCart]);
@@ -135,68 +89,6 @@ export default function CheckoutPage() {
       );
     }, 0);
   };
-
-  // const handlePlaceOrder = async () => {
-  //   try {
-  //     const ordersRef = firestore().collection("orders");
-  
-  //     for (const storeGroup of checkoutItems) {
-  //       const orderItems = storeGroup.items.map((item) => ({
-  //         name: item.name,
-  //         price: item.price,
-  //         quantity: item.quantity,
-  //         productId: item.itemId,
-  //         productRef: item.productRef,
-  //       }));
-  
-  //       // Create order data without history timestamp
-  //       const orderData = {
-  //         userRef: firestore().collection("users").doc(currentUser.id),
-  //         storeName: storeGroup.storeName,
-  //         storeRef: storeGroup.userRef, // Include userRef for the store
-  //         items: orderItems,
-  //         totalAmount: orderItems.reduce(
-  //           (total, item) => total + item.price * item.quantity,
-  //           0
-  //         ),
-  //         createdAt: firestore.FieldValue.serverTimestamp(), // Add the timestamp here
-  //         status: "Order Placed",
-  //         history: [], // Initialize as an empty array
-  //       };
-  
-  //       console.log("orderData", orderData);
-  
-  //       // Add the order to the collection and get its reference
-  //       const orderDocRef = await ordersRef.add(orderData);
-  
-  //       // Add the history entry with a separate update
-  //       await orderDocRef.update({
-  //         history: firestore.FieldValue.arrayUnion({
-  //           status: "Order Placed",
-  //           timestamp: firestore.FieldValue.serverTimestamp(),
-  //         }),
-  //       });
-  
-  //       console.log("Order successfully added with ID:", orderDocRef.id);
-  //     }
-  
-  //     // Clear the selected cart items after order placement
-  //     const parsedSelectedCart = JSON.parse(selectedCart || "[]");
-  //     for (const { itemId } of parsedSelectedCart) {
-  //       await firestore()
-  //         .collection("users")
-  //         .doc(currentUser.id)
-  //         .collection("carts")
-  //         .doc(itemId)
-  //         .delete();
-  //     }
-  
-  //     Alert.alert("Order Placed", "Your order has been placed successfully!");
-  //   } catch (error) {
-  //     console.error("Error placing order:", error);
-  //     Alert.alert("Error", "Failed to place your order. Please try again.");
-  //   }
-  // };
   const handlePlaceOrder = async () => {
     try {
       const ordersRef = firestore().collection("orders");
@@ -246,11 +138,19 @@ export default function CheckoutPage() {
           .doc(itemId)
           .delete();
       }
-  
-      Alert.alert("Order Placed", "Your order has been placed successfully!");
+      Toast.show({
+        type: "success",
+        text1: "Order Placed",
+        text2: `Your order has been placed successfully!`,
+      });
+      router.push(`/product/order/${ordersRef.id}`);
     } catch (error) {
       console.error("Error placing order:", error);
-      Alert.alert("Error", "Failed to place your order. Please try again.");
+      Toast.show({
+        type: "Error",
+        text1: "Order Failed",
+        text2: `Failed to place your order. Please try again.`,
+      });
     }
   };
 
