@@ -4,6 +4,7 @@ import { Text, Button, Card } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/user";
+import { Link } from "expo-router";
 import Toast from "react-native-toast-message";
 
 export default function OrderManagementPage() {
@@ -18,7 +19,6 @@ export default function OrderManagementPage() {
         const ordersSnapshot = await firestore()
           .collection("orders")
           .where("storeRef", "==", firestore().collection("users").doc(currentUser.id))
-          .where("status", "==", "Order Placed")
           .orderBy("createdAt", "desc")
           .get();
 
@@ -51,6 +51,7 @@ export default function OrderManagementPage() {
 
             groupedByCustomer[customerName].push({
               orderId: doc.id,
+              status: data.status,
               items: itemsWithImages,
               totalAmount: data.totalAmount,
               createdAt: data.createdAt.toDate(),
@@ -75,82 +76,82 @@ export default function OrderManagementPage() {
     fetchOrders();
   }, [currentUser.id]);
 
-const handleAccept = async (orderId, customerName) => {
-  try {
-    await firestore().collection("orders").doc(orderId).update({
-      status: "Order Confirmed",
-      history: firestore.FieldValue.arrayUnion({
+  const handleAccept = async (orderId, customerName) => {
+    try {
+      await firestore().collection("orders").doc(orderId).update({
         status: "Order Confirmed",
-        date: firestore.Timestamp.now(),
-      }),
-    });
-    setGroupedOrders((prevGroupedOrders) =>
-      prevGroupedOrders.map((group) =>
-        group.customerName === customerName
-          ? {
-              ...group,
-              orders: group.orders.filter((order) => order.orderId !== orderId),
-            }
-          : group
-      ).filter((group) => group.orders.length > 0)
-    );
+        history: firestore.FieldValue.arrayUnion({
+          status: "Order Confirmed",
+          date: firestore.Timestamp.now(),
+        }),
+      });
+      setGroupedOrders((prevGroupedOrders) =>
+        prevGroupedOrders.map((group) =>
+          group.customerName === customerName
+            ? {
+                ...group,
+                orders: group.orders.filter((order) => order.orderId !== orderId),
+              }
+            : group
+        ).filter((group) => group.orders.length > 0)
+      );
 
-    // Show success toast
-    Toast.show({
-      type: "success",
-      text1: "Order Confirmed",
-      text2: `Order ID ${orderId} has been confirmed.`,
-    });
-  } catch (error) {
-    console.error("Error accepting order:", error);
+      // Show success toast
+      Toast.show({
+        type: "success",
+        text1: "Order Confirmed",
+        text2: `Order ID ${orderId} has been confirmed.`,
+      });
+    } catch (error) {
+      console.error("Error accepting order:", error);
 
-    // Show error toast
-    Toast.show({
-      type: "error",
-      text1: "Error",
-      text2: "Failed to accept the order. Please try again.",
-    });
-  }
-};
+      // Show error toast
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to accept the order. Please try again.",
+      });
+    }
+  };
 
-const handleReject = async (orderId, customerName) => {
-  try {
-    await firestore().collection("orders").doc(orderId).update({
-      status: "Canceled",
-      history: firestore.FieldValue.arrayUnion({
+  const handleReject = async (orderId, customerName) => {
+    try {
+      await firestore().collection("orders").doc(orderId).update({
         status: "Canceled",
-        date: firestore.Timestamp.now(),
-      }),
-    });
+        history: firestore.FieldValue.arrayUnion({
+          status: "Canceled",
+          date: firestore.Timestamp.now(),
+        }),
+      });
 
-    setGroupedOrders((prevGroupedOrders) =>
-      prevGroupedOrders.map((group) =>
-        group.customerName === customerName
-          ? {
-              ...group,
-              orders: group.orders.filter((order) => order.orderId !== orderId),
-            }
-          : group
-      ).filter((group) => group.orders.length > 0)
-    );
+      setGroupedOrders((prevGroupedOrders) =>
+        prevGroupedOrders.map((group) =>
+          group.customerName === customerName
+            ? {
+                ...group,
+                orders: group.orders.filter((order) => order.orderId !== orderId),
+              }
+            : group
+        ).filter((group) => group.orders.length > 0)
+      );
 
-    // Show success toast
-    Toast.show({
-      type: "success",
-      text1: "Order Rejected",
-      text2: `Order ID ${orderId} has been rejected.`,
-    });
-  } catch (error) {
-    console.error("Error rejecting order:", error);
+      // Show success toast
+      Toast.show({
+        type: "success",
+        text1: "Order Rejected",
+        text2: `Order ID ${orderId} has been rejected.`,
+      });
+    } catch (error) {
+      console.error("Error rejecting order:", error);
 
-    // Show error toast
-    Toast.show({
-      type: "error",
-      text1: "Error",
-      text2: "Failed to reject the order. Please try again.",
-    });
-  }
-};
+      // Show error toast
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to reject the order. Please try again.",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -169,8 +170,11 @@ const handleReject = async (orderId, customerName) => {
           {group.orders.map((order) => (
             <Card key={order.orderId} style={styles.orderCard}>
               <Card.Title
-                title={`Order ID: ${order.orderId}`}
-                titleStyle={styles.orderId}
+                title={
+                  <Text>
+                    Order ID: <Link style={styles.orderId} href={`/orderHistory/${order.orderId}`}>{order.orderId}</Link>
+                  </Text>
+                }
                 subtitle={`Total: ₱${order.totalAmount}`}
               />
               <Card.Content>
@@ -188,22 +192,24 @@ const handleReject = async (orderId, customerName) => {
                   </View>
                 ))}
               </Card.Content>
-              <Card.Actions>
-                <Button
-                  mode="contained"
-                  onPress={() => handleAccept(order.orderId, group.customerName)}
-                  style={styles.acceptButton}
-                >
-                  Accept
-                </Button>
-                <Button
-                  mode="contained"
-                  onPress={() => handleReject(order.orderId, group.customerName)}
-                  style={styles.rejectButton}
-                >
-                  Reject
-                </Button>
-              </Card.Actions>
+              {order.status === "Order Placed" && ( // Show buttons only for "Order Placed" status
+                <Card.Actions>
+                  <Button
+                    mode="contained"
+                    onPress={() => handleAccept(order.orderId, group.customerName)}
+                    style={styles.acceptButton}
+                  >
+                    Accept
+                  </Button>
+                  <Button
+                    mode="contained"
+                    onPress={() => handleReject(order.orderId, group.customerName)}
+                    style={styles.rejectButton}
+                  >
+                    Reject
+                  </Button>
+                </Card.Actions>
+              )}
             </Card>
           ))}
         </Card>
@@ -246,7 +252,8 @@ const styles = StyleSheet.create({
   orderId: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#2f4f4f",
+    color: "#2f8fdd",
+    textDecorationLine: "underline",
   },
   cardContent: {
     flexDirection: "row",

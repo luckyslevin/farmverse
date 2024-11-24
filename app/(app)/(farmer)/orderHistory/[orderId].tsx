@@ -62,10 +62,10 @@ export default function OrderTrackingPage() {
     fetchOrderDetails();
   }, [orderId]);
 
-  const handleCancelOrder = async () => {
+  const handleReceivedPayment = async () => {
     Alert.alert(
-      "Cancel Order",
-      "Are you sure you want to cancel this order?",
+      "Confirm Payment",
+      "Are you sure you have received the payment for this order?",
       [
         { text: "No", style: "cancel" },
         {
@@ -73,26 +73,28 @@ export default function OrderTrackingPage() {
           onPress: async () => {
             try {
               await firestore().collection("orders").doc(orderId).update({
-                status: "Canceled",
+                status: "Delivered",
                 history: firestore.FieldValue.arrayUnion({
-                  status: "Canceled",
+                  status: "Delivered",
                   date: firestore.Timestamp.now(),
                 }),
               });
               setOrderData((prevData) => ({
                 ...prevData,
-                status: "Canceled",
+                status: "Delivered",
                 history: [
                   ...prevData.history,
-                  { status: "Canceled", date: firestore.Timestamp.now() },
+                  { status: "Delivered", date: firestore.Timestamp.now() },
                 ],
               }));
 
-              Alert.alert("Success", "Your order has been canceled.");
-              router.push("/"); // Navigate back to the home page or any relevant page
+              Alert.alert("Success", "The order has been marked as Delivered.");
             } catch (error) {
-              console.error("Error canceling the order:", error);
-              Alert.alert("Error", "Failed to cancel the order. Please try again.");
+              console.error("Error marking the order as Delivered:", error);
+              Alert.alert(
+                "Error",
+                "Failed to mark the order as Delivered. Please try again."
+              );
             }
           },
         },
@@ -174,19 +176,19 @@ export default function OrderTrackingPage() {
           </Text>
         </View>
 
-        {/* Cancel Order and Back to Home Buttons */}
-        {orderData.status !== "Canceled" && (
+        {/* Buttons Section */}
+        {orderData.status === "Order Confirmed" && (
           <Button
             mode="contained"
-            onPress={handleCancelOrder}
-            style={styles.cancelButton}
+            onPress={handleReceivedPayment}
+            style={styles.paymentButton}
           >
-            Cancel Order
+            Received Payment
           </Button>
         )}
         <Button
           mode="contained"
-          onPress={() => router.push("/(buyer)/product")}
+          onPress={() => router.push("/orderHistory")}
           style={styles.backButton}
         >
           Back to Home
@@ -317,6 +319,12 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: "#f44336",
+    borderRadius: 20,
+    padding: 10,
+    marginBottom: 10,
+  },
+  paymentButton: {
+    backgroundColor: "#4CAF50",
     borderRadius: 20,
     padding: 10,
     marginBottom: 10,

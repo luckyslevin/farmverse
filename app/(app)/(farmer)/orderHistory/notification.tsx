@@ -20,11 +20,8 @@ export default function FarmersNotificationPage() {
         // Fetch orders for the farmer (based on storeRef)
         const ordersSnapshot = await firestore()
           .collection("orders")
-          .where(
-            "storeRef",
-            "==",
-            firestore().collection("users").doc(currentUser.id)
-          )
+          .where("storeRef", "==", firestore().collection("users").doc(currentUser.id))
+          .where("status", "==", "Order Placed")
           .orderBy("createdAt", "desc")
           .get();
 
@@ -86,8 +83,7 @@ export default function FarmersNotificationPage() {
             key={index}
             style={styles.notificationCard}
             onPress={() => {
-              // Navigate to the order details page
-              router.push(`/product/order/${notification.id}`);
+              router.push("/orderHistory");
             }}
             mode="contained"
           >
@@ -103,9 +99,13 @@ export default function FarmersNotificationPage() {
                   New Order Received!
                 </Text>
                 <Text style={styles.notificationMessage}>
-                  Order ID: <Text style={styles.orderIdText}>{notification.id}</Text>{" "}
-                  has been placed by <Text style={styles.customerName}>{notification.customerName}</Text>.{" "}
-                  Please review and prepare the order for processing.
+                  Order ID:{" "}
+                  <Text style={styles.orderIdText}>{notification.id}</Text> has
+                  been placed by{" "}
+                  <Text style={styles.customerName}>
+                    {notification.customerName}
+                  </Text>
+                  . Please review and prepare the order for processing.
                 </Text>
                 <Text style={styles.notificationDate}>{notification.date}</Text>
               </View>
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    backgroundColor: "#f7fbe1",
+    // backgroundColor: "#f7fbe1",
   },
   loadingContainer: {
     flex: 1,
