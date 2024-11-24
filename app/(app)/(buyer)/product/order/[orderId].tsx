@@ -82,7 +82,6 @@ export default function OrderTrackingPage() {
               }));
 
               Alert.alert("Success", "Your order has been canceled.");
-              router.push("/"); // Navigate back to the home page or any relevant page
             } catch (error) {
               console.error("Error canceling the order:", error);
               Alert.alert("Error", "Failed to cancel the order. Please try again.");
