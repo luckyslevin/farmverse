@@ -91,71 +91,96 @@ export default function CheckoutPage() {
   };
   const handlePlaceOrder = async () => {
     try {
-      const ordersRef = firestore().collection("orders");
+      await firestore().runTransaction(async (transaction) => {
+        const ordersRef = firestore().collection("orders");
   
-      for (const storeGroup of checkoutItems) {
-        const orderItems = storeGroup.items.map((item) => ({
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          productId: item.itemId,
-          productRef: item.productRef,
-        }));
+        for (const storeGroup of checkoutItems) {
+          const orderItems = await Promise.all(
+            storeGroup.items.map(async (item) => {
+              const productRef = item.productRef;
+              const productDoc = await transaction.get(productRef);
   
-        // Step 1: Add the order without history
-        const orderDocRef = await ordersRef.add({
-          userRef: firestore().collection("users").doc(currentUser.id),
-          storeName: storeGroup.storeName,
-          storeRef: storeGroup.userRef,
-          items: orderItems,
-          totalAmount: orderItems.reduce(
-            (total, item) => total + item.price * item.quantity,
-            0
-          ),
-          createdAt: firestore.FieldValue.serverTimestamp(), // Directly used in Firestore add()
-          status: "Order Placed",
-          notificationSent: {
-            orderPlaced: false,
-            orderConfirmed: false,
-            delivered: false,
-          },
-          history: [], // Initially empty
-        });
+              if (!productDoc.exists) {
+                throw new Error(`Product not found: ${item.name}`);
+              }
   
-        // Step 2: Update the history field
-        await orderDocRef.update({
-          history: firestore.FieldValue.arrayUnion({
+              const productData = productDoc.data();
+              const updatedQuantity = productData.quantity - item.quantity;
+  
+              if (updatedQuantity < 0) {
+                throw new Error(
+                  `Insufficient stock for product: ${item.name}. Available: ${productData.quantity}, Required: ${item.quantity}`
+                );
+              }
+  
+              // Update the product quantity
+              transaction.update(productRef, { quantity: updatedQuantity });
+  
+              return {
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                productId: item.itemId,
+                productRef: item.productRef,
+              };
+            })
+          );
+  
+          // Add the order
+          const orderDocRef = ordersRef.doc();
+          transaction.set(orderDocRef, {
+            userRef: firestore().collection("users").doc(currentUser.id),
+            storeName: storeGroup.storeName,
+            storeRef: storeGroup.userRef,
+            items: orderItems,
+            totalAmount: orderItems.reduce(
+              (total, item) => total + item.price * item.quantity,
+              0
+            ),
+            createdAt: firestore.FieldValue.serverTimestamp(),
             status: "Order Placed",
-            date: firestore.Timestamp.now(), // Used directly inside update()
-          }),
-        });
+            notificationSent: {
+              orderPlaced: false,
+              orderConfirmed: false,
+              delivered: false,
+            },
+            history: [
+              {
+                status: "Order Placed",
+                date: firestore.Timestamp.now(),
+              },
+            ],
+          });
+        }
   
-        console.log("Order placed successfully:", orderDocRef.id);
-      }
+        // Clear the cart
+        const parsedSelectedCart = JSON.parse(selectedCart || "[]");
+        for (const { itemId } of parsedSelectedCart) {
+          const cartRef = firestore()
+            .collection("users")
+            .doc(currentUser.id)
+            .collection("carts")
+            .doc(itemId);
+          transaction.delete(cartRef);
+        }
+      });
   
-      // Clear the selected cart items after order placement
-      const parsedSelectedCart = JSON.parse(selectedCart || "[]");
-      for (const { itemId } of parsedSelectedCart) {
-        await firestore()
-          .collection("users")
-          .doc(currentUser.id)
-          .collection("carts")
-          .doc(itemId)
-          .delete();
-      }
       Toast.show({
         type: "success",
         text1: "Order Placed",
-        text2: `Your order has been placed successfully!`,
+        text2: "Your order has been placed successfully!",
+        position: "bottom",
       });
-      console.log(ordersRef.id)
+  
       router.push(`/product/order/notification`);
     } catch (error) {
       console.error("Error placing order:", error);
+  
       Toast.show({
-        type: "Error",
+        type: "error",
         text1: "Order Failed",
-        text2: `Failed to place your order. Please try again.`,
+        text2: error.message || "Failed to place your order. Please try again.",
+        position: "bottom",
       });
     }
   };
