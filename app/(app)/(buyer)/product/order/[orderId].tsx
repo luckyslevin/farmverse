@@ -174,7 +174,7 @@ export default function OrderTrackingPage() {
         </View>
 
         {/* Cancel Order and Back to Home Buttons */}
-        {orderData.status !== "Canceled" && (
+        {orderData.status === "Order Placed" && (
           <Button
             mode="contained"
             onPress={handleCancelOrder}
