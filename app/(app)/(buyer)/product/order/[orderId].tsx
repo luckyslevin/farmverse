@@ -174,6 +174,16 @@ export default function OrderTrackingPage() {
         </View>
 
         {/* Cancel Order and Back to Home Buttons */}
+        {orderData.status === "Delivered" && (
+          <Button
+            mode="contained"
+            onPress={() => router.push(`/product/order/review/${orderId}`)}
+            style={styles.rateButton}
+          >
+            Rate Order
+          </Button>
+        )}
+
         {orderData.status === "Order Placed" && (
           <Button
             mode="contained"
@@ -205,6 +215,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  rateButton: {
+    backgroundColor: "#4CAF50",
+    borderRadius: 20,
+    padding: 10,
+    marginBottom: 10,
   },
   loadingText: {
     fontSize: 16,

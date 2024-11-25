@@ -6,14 +6,14 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { Text, Avatar, Button } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/user";
 import Toast from "react-native-toast-message";
+import { Rating } from "react-native-stock-star-rating";
 
 const { width } = Dimensions.get("window");
 
@@ -41,6 +41,21 @@ export default function ProductDetailPage() {
           if (userDoc.exists) {
             setUser(userDoc.data());
           }
+          // Fetch user details for each rating
+          const ratingsWithUserInfo = await Promise.all(
+            productData.ratings.map(async (rating) => {
+              const userDoc = await rating.userRef.get();
+
+              return {
+                ...rating,
+                userName: userDoc.exists
+                  ? `${userDoc.data().firstName} ${userDoc.data().lastName}`
+                  : "Anonymous",
+                avatarUrl: userDoc.exists ? userDoc.data().avatarUrl : null,
+              };
+            })
+          );
+          setProduct({ id, ...productData, ratings: ratingsWithUserInfo });
         }
       } catch (error) {
         console.error("Error fetching product or user:", error);
@@ -50,7 +65,48 @@ export default function ProductDetailPage() {
     };
 
     fetchProductAndUser();
-  }, []);
+  }, [id]);
+
+  //   useEffect(() => {
+  //   const fetchProductAndUser = async () => {
+  //     try {
+  //       const productDoc = await firestore()
+  //         .collection("products")
+  //         .doc(id)
+  //         .get();
+
+  //       if (productDoc.exists) {
+  //         const productData = productDoc.data();
+
+  //         // Fetch user details for each rating
+  //         const ratingsWithUserInfo = await Promise.all(
+  //           productData.ratings.map(async (rating) => {
+  //             const userDoc = await firestore()
+  //               .collection("users")
+  //               .doc(rating.userId)
+  //               .get();
+
+  //             return {
+  //               ...rating,
+  //               userName: userDoc.exists
+  //                 ? `${userDoc.data().firstName} ${userDoc.data().lastName}`
+  //                 : "Anonymous",
+  //               avatarUrl: userDoc.exists ? userDoc.data().avatarUrl : null,
+  //             };
+  //           })
+  //         );
+
+  //         setProduct({ id, ...productData, ratings: ratingsWithUserInfo });
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching product or user details:", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchProductAndUser();
+  // }, [id]);
 
   const addToCart = async () => {
     try {
@@ -119,7 +175,7 @@ export default function ProductDetailPage() {
           {user.store?.avatarUrl ? (
             <Avatar.Image size={40} source={{ uri: user.store.avatarUrl }} />
           ) : (
-            <Avatar.Text size={40} label="t" />
+            <Avatar.Text size={40} label={user?.store?.name.charAt(0) || "t"} />
           )}
           <Text style={styles.storeName}>
             {user?.store?.name || "Store Name"}
@@ -176,6 +232,78 @@ export default function ProductDetailPage() {
           <Text style={styles.detailLabel}>Price Type</Text>
           <Text style={styles.detailValue}>{product?.priceType || 'Price Type'}</Text>
         </View> */}
+      </View>
+      {/* Customer Reviews */}
+      <View style={styles.reviewSection}>
+        <Text style={styles.reviewHeader}>Customer Reviews</Text>
+
+        {/* Display Average Rating */}
+        {product?.ratings && product.ratings.length > 0 ? (
+          <>
+            <View style={styles.averageRatingContainer}>
+              <Text style={styles.averageRatingText}>
+                {(
+                  product.ratings.reduce(
+                    (sum, rating) => sum + rating.rating,
+                    0
+                  ) / product.ratings.length
+                ).toFixed(1)}
+              </Text>
+              <Rating
+                stars={product.ratings.reduce(
+                  (sum, rating) => sum + rating.rating,
+                  0
+                ) / product.ratings.length}
+                size={20}
+                maxStars={5}
+                color={"#FFD700"}
+                style={styles.starRating}
+              />
+              <Text style={styles.totalReviews}>
+                ({product.ratings.length} Reviews)
+              </Text>
+            </View>
+
+            {/* Display Individual Reviews */}
+            {product.ratings.map((rating, index) => (
+              <View key={index} style={styles.ratingCard}>
+                <View style={styles.ratingHeader}>
+                  {/* Avatar and Name */}
+                  <View style={styles.reviewerInfo}>
+                    <Avatar.Image
+                      size={40}
+                      source={{
+                        uri:
+                          rating.avatarUrl || "https://via.placeholder.com/100",
+                      }}
+                    />
+                    <View style={{ marginLeft: 10 }}>
+                      <Text style={styles.reviewerName}>
+                        {rating.userName || "Anonymous"}
+                      </Text>
+                      <Text style={styles.ratingDate}>
+                        {new Date(
+                          rating.date.seconds * 1000
+                        ).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                {/* Star Rating for Individual Review */}
+                <Rating
+                  stars={rating.rating}
+                  size={16}
+                  maxStars={5}
+                  color={"#FFD700"}
+                  style={styles.starRating}
+                />
+                <Text style={styles.reviewText}>{rating.review}</Text>
+              </View>
+            ))}
+          </>
+        ) : (
+          <Text style={styles.noRatingsText}>No reviews available yet.</Text>
+        )}
       </View>
     </ScrollView>
   );
@@ -276,5 +404,114 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 14,
     color: "#2f4f4f",
+  },
+  // reviewSection: {
+  //   padding: 20,
+  //   backgroundColor: "#f7fbe1",
+  //   borderRadius: 8,
+  //   marginHorizontal: 10,
+  //   marginTop: 20,
+  // },
+  // reviewHeader: {
+  //   fontSize: 18,
+  //   fontWeight: "bold",
+  //   color: "#2f4f4f",
+  //   marginBottom: 10,
+  // },
+  // averageRating: {
+  //   fontSize: 16,
+  //   fontWeight: "bold",
+  //   color: "#2f4f4f",
+  //   marginBottom: 10,
+  // },
+  // noRatingsText: {
+  //   fontSize: 14,
+  //   color: "#4f4f4f",
+  //   textAlign: "center",
+  // },
+  // ratingCard: {
+  //   padding: 10,
+  //   borderBottomWidth: 1,
+  //   borderBottomColor: "#d9e4d3",
+  //   marginBottom: 10,
+  // },
+  // ratingHeader: {
+  //   flexDirection: "row",
+  //   justifyContent: "space-between",
+  //   alignItems: "center",
+  //   marginBottom: 5,
+  // },
+  // reviewerName: {
+  //   fontSize: 14,
+  //   fontWeight: "bold",
+  //   color: "#2f4f4f",
+  // },
+  // ratingDate: {
+  //   fontSize: 12,
+  //   color: "#4f4f4f",
+  // },
+  // ratingStars: {
+  //   flexDirection: "row",
+  //   marginBottom: 5,
+  // },
+  // reviewText: {
+  //   fontSize: 14,
+  //   color: "#4f4f4f",
+  // },
+  // reviewerInfo: {
+  //   flexDirection: "row",
+  //   alignItems: "center",
+  // },
+  averageRatingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  averageRatingText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#4CAF50",
+    marginRight: 10,
+  },
+  starRating: {
+    marginHorizontal: 10,
+  },
+  totalReviews: {
+    fontSize: 16,
+    color: "#4f4f4f",
+  },
+  ratingCard: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#d9e4d3",
+    marginBottom: 10,
+  },
+  ratingHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  reviewerName: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#2f4f4f",
+  },
+  ratingDate: {
+    fontSize: 12,
+    color: "#4f4f4f",
+  },
+  reviewText: {
+    fontSize: 14,
+    color: "#4f4f4f",
+  },
+  reviewerInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  noRatingsText: {
+    fontSize: 14,
+    color: "#4f4f4f",
+    textAlign: "center",
   },
 });
