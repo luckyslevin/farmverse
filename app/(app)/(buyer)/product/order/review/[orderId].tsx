@@ -73,33 +73,52 @@ export default function RateProductsPage() {
 
   const handleSubmitRatings = async () => {
     try {
-      const batch = firestore().batch();
-
-      // Loop through each product and update its `ratings` array
-      Object.entries(ratings).forEach(([productId, { rating, review }]) => {
+      for (const [productId, { rating, review }] of Object.entries(ratings)) {
+        // Skip if the rating is empty or invalid
+        if (!rating || isNaN(rating)) {
+          continue;
+        }
+  
         const productRef = firestore().collection("products").doc(productId);
-
-        // Add the rating to the product's `ratings` field
-        batch.update(productRef, {
-          ratings: firestore.FieldValue.arrayUnion({
-            userRef: orderData.userRef, // Updated to use userRef instead of userId
+  
+        // Fetch existing ratings for the product
+        const productDoc = await productRef.get();
+        const existingRatings = productDoc.data()?.ratings || [];
+  
+        // Check if a rating already exists for this orderId and productId
+        const existingRatingIndex = existingRatings.findIndex(
+          (r) => r.orderId === orderId
+        );
+  
+        if (existingRatingIndex > -1) {
+          // Update the existing rating
+          existingRatings[existingRatingIndex] = {
+            ...existingRatings[existingRatingIndex],
             rating: parseInt(rating, 10),
             review,
-            orderId,
             date: firestore.Timestamp.now(),
-          }),
-        });
-      });
-
-      // Commit the batch update
-      await batch.commit();
-
+          };
+          await productRef.update({ ratings: existingRatings });
+        } else {
+          // Add a new rating
+          await productRef.update({
+            ratings: firestore.FieldValue.arrayUnion({
+              userRef: orderData.userRef, // Use userRef
+              rating: parseInt(rating, 10),
+              review,
+              orderId,
+              date: firestore.Timestamp.now(),
+            }),
+          });
+        }
+      }
+  
       Toast.show({
         type: "success",
         text1: "Success",
         text2: "Thank you for rating the products!",
       });
-
+  
       // Navigate back or to the home page
       router.push("/(buyer)/product");
     } catch (error) {
@@ -111,6 +130,7 @@ export default function RateProductsPage() {
       });
     }
   };
+  
 
   const handleRatingChange = (productId, field, value) => {
     setRatings((prevRatings) => ({
