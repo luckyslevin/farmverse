@@ -9,6 +9,8 @@ import {
 import { Text, Card } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
 import { LineChart } from "react-native-chart-kit";
+import { useAtomValue } from "jotai";
+import { userAtom } from "@/stores/user";
 
 export default function SalesSummaryPage() {
   const [loading, setLoading] = useState(true);
@@ -20,6 +22,7 @@ export default function SalesSummaryPage() {
     newCustomers: 0,
     earningsHistory: [],
   });
+  const currentUser = useAtomValue(userAtom)
 
   useEffect(() => {
     const fetchSalesSummary = async () => {
@@ -47,6 +50,7 @@ export default function SalesSummaryPage() {
         const ordersSnapshot = await firestore()
           .collection("orders")
           .where("createdAt", ">=", startOfPeriod)
+          .where("storeRef", "==", firestore().collection("users").doc(currentUser.id))
           .get();
 
         let newOrders = 0;
