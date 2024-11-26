@@ -22,7 +22,7 @@ export default function SalesSummaryPage() {
     newCustomers: 0,
     earningsHistory: [],
   });
-  const currentUser = useAtomValue(userAtom)
+  const currentUser = useAtomValue(userAtom);
 
   useEffect(() => {
     const fetchSalesSummary = async () => {
@@ -50,7 +50,11 @@ export default function SalesSummaryPage() {
         const ordersSnapshot = await firestore()
           .collection("orders")
           .where("createdAt", ">=", startOfPeriod)
-          .where("storeRef", "==", firestore().collection("users").doc(currentUser.id))
+          .where(
+            "storeRef",
+            "==",
+            firestore().collection("users").doc(currentUser.id)
+          )
           .get();
 
         let newOrders = 0;
@@ -97,7 +101,17 @@ export default function SalesSummaryPage() {
               .collection("carts")
               .where("createdAt", ">=", startOfPeriod)
               .get();
-            addedToCart += cartsSnapshot.size;
+
+            for (const cartDoc of cartsSnapshot.docs) {
+              const cartItem = cartDoc.data();
+              const productDoc = await cartItem.productRef.get();
+              if (
+                productDoc.exists &&
+                productDoc.data()?.storeRef?.id === currentUser.id
+              ) {
+                addedToCart++;
+              }
+            }
           })
         );
 
