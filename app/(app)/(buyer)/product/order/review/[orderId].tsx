@@ -7,6 +7,7 @@ import {
   Image,
 } from "react-native";
 import { Text, Button, TextInput } from "react-native-paper";
+import { RatingInput } from "react-native-stock-star-rating";
 import firestore from "@react-native-firebase/firestore";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import Toast from "react-native-toast-message";
@@ -50,7 +51,7 @@ export default function RateProductsPage() {
           const initialRatings = {};
           itemsWithDetails.forEach((item) => {
             initialRatings[item.productRef.id] = {
-              rating: "",
+              rating: 0,
               review: "",
             };
           });
@@ -74,27 +75,25 @@ export default function RateProductsPage() {
   const handleSubmitRatings = async () => {
     try {
       for (const [productId, { rating, review }] of Object.entries(ratings)) {
-        // Skip if the rating is empty or invalid
-        if (!rating || isNaN(rating)) {
-          continue;
-        }
-  
+        // Skip if rating is not provided
+        if (!rating || rating === 0) continue;
+
         const productRef = firestore().collection("products").doc(productId);
-  
+
         // Fetch existing ratings for the product
         const productDoc = await productRef.get();
         const existingRatings = productDoc.data()?.ratings || [];
-  
+
         // Check if a rating already exists for this orderId and productId
         const existingRatingIndex = existingRatings.findIndex(
           (r) => r.orderId === orderId
         );
-  
+
         if (existingRatingIndex > -1) {
           // Update the existing rating
           existingRatings[existingRatingIndex] = {
             ...existingRatings[existingRatingIndex],
-            rating: parseInt(rating, 10),
+            rating,
             review,
             date: firestore.Timestamp.now(),
           };
@@ -104,7 +103,7 @@ export default function RateProductsPage() {
           await productRef.update({
             ratings: firestore.FieldValue.arrayUnion({
               userRef: orderData.userRef, // Use userRef
-              rating: parseInt(rating, 10),
+              rating,
               review,
               orderId,
               date: firestore.Timestamp.now(),
@@ -112,13 +111,13 @@ export default function RateProductsPage() {
           });
         }
       }
-  
+
       Toast.show({
         type: "success",
         text1: "Success",
         text2: "Thank you for rating the products!",
       });
-  
+
       // Navigate back or to the home page
       router.push("/(buyer)/product");
     } catch (error) {
@@ -130,7 +129,6 @@ export default function RateProductsPage() {
       });
     }
   };
-  
 
   const handleRatingChange = (productId, field, value) => {
     setRatings((prevRatings) => ({
@@ -163,21 +161,19 @@ export default function RateProductsPage() {
               style={styles.productImage}
             />
             <Text style={styles.productName}>{item.name}</Text>
-            <TextInput
-              label="Rating (1-5)"
-              mode="outlined"
-              value={ratings[item.productRef.id]?.rating}
-              onChangeText={(value) =>
-                handleRatingChange(
-                  item.productRef.id,
-                  "rating",
-                  value.replace(/[^0-9]/g, "") // Restrict input to numbers
-                )
+
+            {/* Star Rating Component */}
+            <RatingInput
+              rating={ratings[item.productRef.id]?.rating}
+              setRating={(value) =>
+                handleRatingChange(item.productRef.id, "rating", value)
               }
-              keyboardType="numeric"
-              style={styles.input}
-              placeholder="Enter a number between 1 and 5"
+              size={30}
+              maxStars={5}
+              bordered={true}
+              style={styles.starRating}
             />
+
             <TextInput
               label="Review"
               mode="outlined"
@@ -248,8 +244,7 @@ const styles = StyleSheet.create({
     color: "#2f4f4f",
     marginBottom: 10,
   },
-  input: {
-    width: "100%",
+  starRating: {
     marginBottom: 10,
   },
   textArea: {

@@ -34,18 +34,19 @@ export default function ProductDetailPage() {
           .get();
         if (productDoc.exists) {
           const productData = productDoc.data();
-          setProduct({ id, ...productData });
-
+          // setProduct(productData);
           // Fetch user data referenced in userRef
           const userDoc = await productData.userRef.get();
           if (userDoc.exists) {
             setUser(userDoc.data());
           }
-          // Fetch user details for each rating
-          const ratingsWithUserInfo = await Promise.all(
-            productData.ratings.map(async (rating) => {
-              const userDoc = await rating.userRef.get();
 
+          // Fetch user details for each rating
+          const ratings = await Promise.all(
+            productData?.ratings?.map(async (rating) => {
+              
+              const userDoc = await rating.userRef.get();
+              
               return {
                 ...rating,
                 userName: userDoc.exists
@@ -53,9 +54,9 @@ export default function ProductDetailPage() {
                   : "Anonymous",
                 avatarUrl: userDoc.exists ? userDoc.data().avatarUrl : null,
               };
-            })
+            }) || []
           );
-          setProduct({ id, ...productData, ratings: ratingsWithUserInfo });
+          setProduct({ id, ...productData, ratings  });
         }
       } catch (error) {
         console.error("Error fetching product or user:", error);
@@ -66,47 +67,6 @@ export default function ProductDetailPage() {
 
     fetchProductAndUser();
   }, [id]);
-
-  //   useEffect(() => {
-  //   const fetchProductAndUser = async () => {
-  //     try {
-  //       const productDoc = await firestore()
-  //         .collection("products")
-  //         .doc(id)
-  //         .get();
-
-  //       if (productDoc.exists) {
-  //         const productData = productDoc.data();
-
-  //         // Fetch user details for each rating
-  //         const ratingsWithUserInfo = await Promise.all(
-  //           productData.ratings.map(async (rating) => {
-  //             const userDoc = await firestore()
-  //               .collection("users")
-  //               .doc(rating.userId)
-  //               .get();
-
-  //             return {
-  //               ...rating,
-  //               userName: userDoc.exists
-  //                 ? `${userDoc.data().firstName} ${userDoc.data().lastName}`
-  //                 : "Anonymous",
-  //               avatarUrl: userDoc.exists ? userDoc.data().avatarUrl : null,
-  //             };
-  //           })
-  //         );
-
-  //         setProduct({ id, ...productData, ratings: ratingsWithUserInfo });
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching product or user details:", error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchProductAndUser();
-  // }, [id]);
 
   const addToCart = async () => {
     try {
@@ -159,7 +119,7 @@ export default function ProductDetailPage() {
   return (
     <ScrollView style={styles.container}>
       {/* Product Image */}
-      <Image source={{ uri: product?.imageUrl }} style={styles.image} />
+      <Image source={{ uri: product?.imageUrl  || "https://via.placeholder.com/100" }} style={styles.image} />
 
       {/* Product Title and Price */}
       <View style={styles.productInfo}>
@@ -172,7 +132,7 @@ export default function ProductDetailPage() {
       {/* Store Info with Follow Button */}
       <View style={styles.storeInfo}>
         <View style={styles.storeDetails}>
-          {user.store?.avatarUrl ? (
+          {user?.store?.avatarUrl ? (
             <Avatar.Image size={40} source={{ uri: user.store.avatarUrl }} />
           ) : (
             <Avatar.Text size={40} label={user?.store?.name.charAt(0) || "t"} />
@@ -238,7 +198,7 @@ export default function ProductDetailPage() {
         <Text style={styles.reviewHeader}>Customer Reviews</Text>
 
         {/* Display Average Rating */}
-        {product?.ratings && product.ratings.length > 0 ? (
+        {product?.ratings && product?.ratings?.length > 0 ? (
           <>
             <View style={styles.averageRatingContainer}>
               <Text style={styles.averageRatingText}>
@@ -250,10 +210,12 @@ export default function ProductDetailPage() {
                 ).toFixed(1)}
               </Text>
               <Rating
-                stars={product.ratings.reduce(
-                  (sum, rating) => sum + rating.rating,
-                  0
-                ) / product.ratings.length}
+                stars={
+                  product.ratings.reduce(
+                    (sum, rating) => sum + rating.rating,
+                    0
+                  ) / product.ratings.length
+                }
                 size={20}
                 maxStars={5}
                 color={"#FFD700"}
@@ -405,63 +367,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#2f4f4f",
   },
-  // reviewSection: {
-  //   padding: 20,
-  //   backgroundColor: "#f7fbe1",
-  //   borderRadius: 8,
-  //   marginHorizontal: 10,
-  //   marginTop: 20,
-  // },
-  // reviewHeader: {
-  //   fontSize: 18,
-  //   fontWeight: "bold",
-  //   color: "#2f4f4f",
-  //   marginBottom: 10,
-  // },
-  // averageRating: {
-  //   fontSize: 16,
-  //   fontWeight: "bold",
-  //   color: "#2f4f4f",
-  //   marginBottom: 10,
-  // },
-  // noRatingsText: {
-  //   fontSize: 14,
-  //   color: "#4f4f4f",
-  //   textAlign: "center",
-  // },
-  // ratingCard: {
-  //   padding: 10,
-  //   borderBottomWidth: 1,
-  //   borderBottomColor: "#d9e4d3",
-  //   marginBottom: 10,
-  // },
-  // ratingHeader: {
-  //   flexDirection: "row",
-  //   justifyContent: "space-between",
-  //   alignItems: "center",
-  //   marginBottom: 5,
-  // },
-  // reviewerName: {
-  //   fontSize: 14,
-  //   fontWeight: "bold",
-  //   color: "#2f4f4f",
-  // },
-  // ratingDate: {
-  //   fontSize: 12,
-  //   color: "#4f4f4f",
-  // },
-  // ratingStars: {
-  //   flexDirection: "row",
-  //   marginBottom: 5,
-  // },
-  // reviewText: {
-  //   fontSize: 14,
-  //   color: "#4f4f4f",
-  // },
-  // reviewerInfo: {
-  //   flexDirection: "row",
-  //   alignItems: "center",
-  // },
+  reviewSection: {
+    padding: 20,
+    backgroundColor: "#f7fbe1",
+    borderRadius: 8,
+    marginHorizontal: 10,
+    marginTop: 20,
+  },
+  reviewHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#2f4f4f",
+    marginBottom: 10,
+  },
+  averageRating: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#2f4f4f",
+    marginBottom: 10,
+  },
   averageRatingContainer: {
     flexDirection: "row",
     alignItems: "center",
