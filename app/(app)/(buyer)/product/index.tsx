@@ -52,9 +52,15 @@ export default function Product() {
 
   const renderItem = ({ item }) => (
     <Card
-      style={styles.card}
-      onPress={() =>
-        router.push({ pathname: "/product/[id]", params: { id: item.id } })
+      style={[
+        styles.card,
+        item.quantity <= 0 ? styles.notAvailableCard : null, // Add a visual distinction for not available
+      ]}
+      onPress={() => {
+        if (item.quantity > 0) {
+          router.push({ pathname: "/product/[id]", params: { id: item.id } })
+        }
+      }
       }
     >
       <Card.Cover source={{ uri: item.imageUrl }} style={styles.image} />
@@ -70,10 +76,17 @@ export default function Product() {
         </View>
       </Card.Content>
       <Card.Actions style={styles.cardActions}>
-        <Text style={styles.price}>P {item.price}</Text>
+        {item.quantity > 0 ? (
+          <Text style={styles.price}>₱{item.price}</Text>
+        ) : (
+          <View style={styles.notAvailableContainer}>
+            <Text style={styles.notAvailableText}>Not Available</Text>
+          </View>
+        )}
       </Card.Actions>
     </Card>
   );
+  
 
   return (
     <>
@@ -102,10 +115,12 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
     margin: 10,
-    // marginHorizontal: 10, // Equal horizontal margins for balance
     borderRadius: 10,
     overflow: "hidden",
     backgroundColor: "#ffffff",
+  },
+  notAvailableCard: {
+    opacity: 0.7, // Make unavailable cards look visually distinct
   },
   image: {
     height: 120,
@@ -139,4 +154,17 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#000",
   },
+  notAvailableContainer: {
+    backgroundColor: "#f44336", // Red background for "Not Available"
+    borderRadius: 5,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    alignItems: "center",
+  },
+  notAvailableText: {
+    fontSize: 12,
+    color: "#fff", // White text for "Not Available"
+    fontWeight: "bold",
+  },
 });
+
