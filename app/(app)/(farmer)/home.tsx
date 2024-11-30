@@ -2,15 +2,18 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   ActivityIndicator,
   TouchableOpacity,
+  Dimensions,
+  FlatList,
 } from "react-native";
 import { Text, Card } from "react-native-paper";
 import firestore from "@react-native-firebase/firestore";
 import { LineChart } from "react-native-chart-kit";
 import { useAtomValue } from "jotai";
 import { userAtom } from "@/stores/user";
+
+const { width } = Dimensions.get("window");
 
 export default function SalesSummaryPage() {
   const [loading, setLoading] = useState(true);
@@ -22,6 +25,7 @@ export default function SalesSummaryPage() {
     newCustomers: 0,
     earningsHistory: [],
   });
+  const [productSales, setProductSales] = useState([]); // For product-specific total sales
   const currentUser = useAtomValue(userAtom);
 
   useEffect(() => {
@@ -32,7 +36,6 @@ export default function SalesSummaryPage() {
         const now = new Date();
         let startOfPeriod;
 
-        // Define the start of the period based on the selected timeframe
         if (timeframe === "yearly") {
           startOfPeriod = new Date(now.getFullYear(), 0, 1);
         } else if (timeframe === "monthly") {
@@ -46,7 +49,6 @@ export default function SalesSummaryPage() {
           );
         }
 
-        // Fetch orders for the selected timeframe
         const ordersSnapshot = await firestore()
           .collection("orders")
           .where("createdAt", ">=", startOfPeriod)
@@ -60,38 +62,68 @@ export default function SalesSummaryPage() {
         let newOrders = 0;
         let totalSales = 0; // For delivered orders only
         let earningsHistory = timeframe === "weekly" ? Array(7).fill(0) : {};
+        const productSalesMap = {};
 
-        ordersSnapshot.forEach((doc) => {
-          const data = doc.data();
-          newOrders++;
-          if (data.status === "Delivered") {
-            totalSales += data.totalAmount; // Sum up only delivered orders
+        await Promise.all(
+          ordersSnapshot.docs.map(async (doc) => {
+            const data = doc.data();
+            newOrders++;
+            if (data.status === "Delivered") {
+              totalSales += data.totalAmount;
+              const date = new Date(data.createdAt.toDate());
+              const periodKey =
+                timeframe === "yearly"
+                  ? date.getMonth()
+                  : timeframe === "monthly"
+                  ? date.getDate() - 1
+                  : date.getDay();
 
-            const date = new Date(data.createdAt.toDate());
-            const periodKey =
-              timeframe === "yearly"
-                ? date.getMonth() // Month index for yearly
-                : timeframe === "monthly"
-                ? date.getDate() - 1 // Date index for monthly
-                : date.getDay(); // Day index (0 = Sun, 6 = Sat) for weekly
+              if (timeframe === "weekly") {
+                earningsHistory[periodKey] += data.totalAmount;
+              } else {
+                earningsHistory[periodKey] =
+                  (earningsHistory[periodKey] || 0) + data.totalAmount;
+              }
 
-            if (timeframe === "weekly") {
-              earningsHistory[periodKey] += data.totalAmount;
-            } else {
-              earningsHistory[periodKey] =
-                (earningsHistory[periodKey] || 0) + data.totalAmount;
+              // Calculate total sales for each product
+              await Promise.all(
+                data.items.map(async (item) => {
+                  const productId = item.productId;
+                  if (!productSalesMap[productId]) {
+                    const productDoc = await item.productRef.get();
+                    const productData = productDoc.exists
+                      ? productDoc.data()
+                      : {};
+                    productSalesMap[productId] = {
+                      name: item.name || productData.name || "Unknown Product",
+                      totalSales: productSalesMap[productId]?.totalSales || 0,
+                      imageUrl:
+                        productData.imageUrl ||
+                        "https://via.placeholder.com/150",
+                    };
+                  }
+
+                  productSalesMap[productId].totalSales +=
+                    item.price * item.quantity;
+                })
+              );
             }
-          }
-        });
+          })
+        );
 
-        // New customers for the selected timeframe
+        const productSalesArray = Object.entries(productSalesMap).map(
+          ([productId, data]) => ({
+            productId,
+            ...data,
+          })
+        );
+
         const customersSnapshot = await firestore()
           .collection("users")
           .where("createdAt", ">=", startOfPeriod)
           .get();
         const newCustomers = customersSnapshot.size;
 
-        // Added to cart (fetch from carts subcollection for all users)
         const usersSnapshot = await firestore().collection("users").get();
         let addedToCart = 0;
 
@@ -115,13 +147,12 @@ export default function SalesSummaryPage() {
           })
         );
 
-        // Prepare data for line chart
         const earningsData =
           timeframe === "yearly"
             ? Array.from({ length: 12 }, (_, i) => earningsHistory[i] || 0)
             : timeframe === "monthly"
             ? Array.from({ length: 31 }, (_, i) => earningsHistory[i] || 0)
-            : earningsHistory; // Weekly data is already aligned
+            : earningsHistory;
 
         setSummary({
           newOrders,
@@ -130,6 +161,7 @@ export default function SalesSummaryPage() {
           newCustomers,
           earningsHistory: earningsData,
         });
+        setProductSales(productSalesArray);
       } catch (error) {
         console.error("Error fetching sales summary:", error);
       } finally {
@@ -140,20 +172,10 @@ export default function SalesSummaryPage() {
     fetchSalesSummary();
   }, [timeframe]);
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4f4f4f" />
-        <Text>Loading Sales Summary...</Text>
-      </View>
-    );
-  }
-
-  return (
-    <ScrollView style={styles.container}>
+  const renderHeader = () => (
+    <View>
       <Text style={styles.title}>Sales Summary</Text>
 
-      {/* Timeframe Selector */}
       <View style={styles.timeframeContainer}>
         {["weekly", "monthly", "yearly"].map((period) => (
           <TouchableOpacity
@@ -176,7 +198,6 @@ export default function SalesSummaryPage() {
         ))}
       </View>
 
-      {/* Metrics Section */}
       <View style={styles.cardsContainer}>
         <Card style={styles.card}>
           <Card.Content>
@@ -204,7 +225,6 @@ export default function SalesSummaryPage() {
         </Card>
       </View>
 
-      {/* Earnings History Section */}
       <Text style={styles.sectionTitle}>Earnings History</Text>
       <LineChart
         data={{
@@ -223,34 +243,65 @@ export default function SalesSummaryPage() {
                   "Oct",
                   "Nov",
                   "Dec",
-                ] // 12 months
+                ]
               : timeframe === "monthly"
               ? Array.from({ length: 31 }, (_, i) =>
                   (i + 1) % 5 === 0 ? (i + 1).toString() : ""
-                ) // Every 5th day
-              : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], // Weekly labels
+                )
+              : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
           datasets: [
             {
               data: summary.earningsHistory,
             },
           ],
         }}
-        width={350} // Ensure this matches your screen width
+        width={width - 20}
         height={220}
         chartConfig={{
           backgroundColor: "#f7fbe1",
           backgroundGradientFrom: "#f7fbe1",
           backgroundGradientTo: "#f7fbe1",
           color: (opacity = 1) => `rgba(47, 79, 79, ${opacity})`,
-          strokeWidth: 2, // Thickness of the line
-          decimalPlaces: 0, // No decimal places for y-axis values
+          strokeWidth: 2,
+          decimalPlaces: 0,
           labelColor: (opacity = 1) => `rgba(47, 79, 79, ${opacity})`,
         }}
-        bezier // Smooth curve for the chart
-        yAxisLabel="₱" // Prefix for y-axis values
+        bezier
+        yAxisLabel="₱"
         style={styles.chart}
       />
-    </ScrollView>
+      <Text style={styles.sectionTitle}>Earnings by product</Text>
+    </View>
+  );
+
+  const renderProductItem = ({ item }) => (
+    <Card style={styles.productCard}>
+      <Card.Cover source={{ uri: item.imageUrl }} style={styles.productImage} />
+      <Card.Content>
+        <Text style={styles.productName}>{item.name}</Text>
+        <Text style={styles.totalSales}>Total Sales: ₱{item.totalSales}</Text>
+      </Card.Content>
+    </Card>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4f4f4f" />
+        <Text>Loading Sales Summary...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data={productSales}
+      renderItem={renderProductItem}
+      keyExtractor={(item) => item.productId}
+      numColumns={2}
+      contentContainerStyle={styles.listContent}
+      ListHeaderComponent={renderHeader}
+    />
   );
 }
 
@@ -319,9 +370,40 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#2f4f4f",
     marginBottom: 10,
+    paddingHorizontal: 10,
   },
   chart: {
     marginVertical: 20,
     borderRadius: 8,
+  },
+  productCard: {
+    width: (width - 60) / 2, // Adjust for two columns with consistent spacing
+    marginHorizontal: 10, // Horizontal margin for spacing between columns
+    marginBottom: 20, // Space between rows
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  productImage: {
+    height: 150,
+    width: "100%",
+    resizeMode: "cover",
+    borderRadius: 0,
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginVertical: 5,
+    color: "#2f4f4f",
+    textAlign: "center",
+  },
+  totalSales: {
+    fontSize: 14,
+    color: "#4f4f4f",
+    textAlign: "center",
+  },
+  listContent: {
+    paddingHorizontal: 10, // Consistent padding on both sides
+    paddingBottom: 20,
   },
 });
