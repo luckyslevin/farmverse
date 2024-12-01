@@ -103,7 +103,7 @@ export default function SalesSummaryPage() {
                       name: item.name || productData.name || "Unknown Product",
                       price: item.price,
                       totalSales: productSalesMap[productId]?.totalSales || 0,
-                      quantity: item.quantity || 0,
+                      quantity: productSalesMap[productId]?.quantity || 0,
                       imageUrl:
                         productData.imageUrl ||
                         "https://via.placeholder.com/150",
