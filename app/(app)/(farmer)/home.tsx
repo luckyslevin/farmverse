@@ -96,7 +96,9 @@ export default function SalesSummaryPage() {
                       : {};
                     productSalesMap[productId] = {
                       name: item.name || productData.name || "Unknown Product",
+                      price: item.price,
                       totalSales: productSalesMap[productId]?.totalSales || 0,
+                      quantity: item.quantity || 0,
                       imageUrl:
                         productData.imageUrl ||
                         "https://via.placeholder.com/150",
@@ -105,6 +107,7 @@ export default function SalesSummaryPage() {
 
                   productSalesMap[productId].totalSales +=
                     item.price * item.quantity;
+                  productSalesMap[productId].quantity += item.quantity;
                 })
               );
             }
@@ -279,6 +282,8 @@ export default function SalesSummaryPage() {
       <Card.Cover source={{ uri: item.imageUrl }} style={styles.productImage} />
       <Card.Content>
         <Text style={styles.productName}>{item.name}</Text>
+        <Text style={styles.quantity}>Price: {item.price}</Text>
+        <Text style={styles.quantity}>Quantity Sold: {item.quantity}</Text>
         <Text style={styles.totalSales}>Total Sales: ₱{item.totalSales}</Text>
       </Card.Content>
     </Card>
@@ -401,6 +406,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#4f4f4f",
     textAlign: "center",
+  },
+  quantity: {
+    fontSize: 14,
+    color: "#4f4f4f",
+    textAlign: "center",
+    marginBottom: 5
   },
   listContent: {
     paddingHorizontal: 10, // Consistent padding on both sides
