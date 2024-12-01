@@ -99,9 +99,11 @@ export default function SalesSummaryPage() {
                     const productData = productDoc.exists
                       ? productDoc.data()
                       : {};
+                    
                     productSalesMap[productId] = {
                       name: item.name || productData.name || "Unknown Product",
                       price: item.price,
+                      category: productData.category,
                       totalSales: productSalesMap[productId]?.totalSales || 0,
                       quantity: productSalesMap[productId]?.quantity || 0,
                       imageUrl:
@@ -220,7 +222,7 @@ export default function SalesSummaryPage() {
       });
   
       // Table Headers
-      const tableHeaders = ["Product Name", "Price", "Quantity", "Total Sales"];
+      const tableHeaders = ["Product Name", "Category", "Price", "Quantity", "Total Sales"];
       let tableX = 50;
       const tableY = height - 140;
   
@@ -231,7 +233,7 @@ export default function SalesSummaryPage() {
           size: 12,
           color: rgb(0, 0.53, 0.8),
         });
-        tableX += index === 0 ? 200 : 100; // Adjust spacing between columns
+        tableX += index === 0 ? 150 : 100; // Adjust spacing between columns
       });
   
       // Table Data
@@ -246,7 +248,16 @@ export default function SalesSummaryPage() {
           size: 10,
           color: rgb(0, 0, 0),
         });
-        columnX += 200;
+        columnX += 150;
+  
+        // Category
+        page.drawText(product.category || "N/A", {
+          x: columnX,
+          y: yPosition,
+          size: 10,
+          color: rgb(0, 0, 0),
+        });
+        columnX += 100;
   
         // Price
         page.drawText(`P${product.price.toFixed(2)}`, {
@@ -315,6 +326,7 @@ export default function SalesSummaryPage() {
       Alert.alert("Error", "Failed to generate and save PDF report.");
     }
   };
+  
   
   
 
